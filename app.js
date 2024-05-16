@@ -10,7 +10,8 @@ var rolesRouter = require('./routes/roles');
 var permsRouter = require('./routes/permissions');
 var authRouter = require('./routes/auth');
 var activitiesRouter = require('./routes/activities');
-
+const { register } = require('module');
+var registerActivityRouter = require('./routes/register_acts');
 var app = express();
 
 // view engine setup
@@ -29,7 +30,7 @@ app.use('/api/v1/users', usersRouter);
 app.use('/api/v1/roles', rolesRouter);
 app.use('/api/v1/permissions', permsRouter);
 app.use('/api/v1/activities', activitiesRouter);
-
+app.use('/api/v1/register_activities', registerActivityRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

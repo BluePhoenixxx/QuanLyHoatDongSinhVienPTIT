@@ -5,6 +5,9 @@ const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
 const helper = new Helper();
+const checkPermission2 = require('../utils/checkrole.js');
+
+
 
 // Create a new Activities
 router.post('/', passport.authenticate('jwt', {
@@ -16,14 +19,25 @@ router.post('/', passport.authenticate('jwt', {
                 msg: 'Please pass Activitity name, status , address or creater.'
             })
         } else {
+            let status_id = 1;
+            admin = false;
+            if (checkPermission2(req.user.role_id, 'add_act_uncensored') == true){  
+                status_id = 2;
+                admin = true;
+                auth = req.user.id;
+            }   
+            
             Activity
                 .create({
                     act_name: req.body.act_name,
                     act_description: req.body.act_description,
                     act_address: req.body.act_address,
                     act_price: req.body.act_price,
-                    act_status: req.body.act_status,
-                    creater_id : req.body.creater_id,
+                    act_time : req.body.act_time,
+                    audit_id : admin ? auth : null,
+                    act_status: status_id,
+                    creater_id : req.user.id,
+                    amount :req.body.amount
                 })
                 .then((Activity) => res.status(201).send(Activity))
                 .catch((error) => {
@@ -55,6 +69,32 @@ router.get('/activities_accept', passport.authenticate('jwt', {
         res.status(403).send(error);
     });
 });
+
+
+
+
+
+
+// Get List of Activities unaccept
+router.get('/activities_unaccept', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+        Activity
+            .findAll({
+                where: {
+                    act_status: 1,
+                }
+            })
+            .then((Activitys) => res.status(200).send(Activitys))
+            .catch((error) => {
+                res.status(400).send(error);
+            });
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
+
 
 // get list of activities created by user
 router.get('/activities_user_created', passport.authenticate('jwt', {

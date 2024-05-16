@@ -12,11 +12,10 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       Student.belongsTo(models.Class, {foreignKey: 'class_id', as: 'class'});
       Student.belongsTo(models.User, {foreignKey: 'account_id', as: 'account'});
-
     }
   }
   Student.init({
-    id: {
+    MSSV: {
       type: DataTypes.STRING,
       primaryKey: true
     },

@@ -54,33 +54,30 @@ class Helper {
     }
 
 }
-// const checkPermission = async (roleId, permName) => {
-//     try {
-//         const perm = await Permission.findOne({
-//             where: {
-//                 perm_name: permName
-//             }
-//         });
+async function checkPermission(roleId, permName) {
+    try {
+        const perm = await Permission.findOne({
+            where: {
+                perm_name: permName
+            }
+        });
 
-//         if (!perm) return false;
+        if (!perm) return false; // Nếu không tìm thấy quyền, trả về false
 
-//         const rolePermission = await RolePermission.findOne({
-//             where: {
-//                 role_id: roleId,
-//                 perm_id: perm.id
-//             }
-//         });
+        const rolePermission = await RolePermission.findOne({
+            where: {
+                role_id: roleId,
+                perm_id: perm.id
+            }
+        });
 
-//         return !!rolePermission;
-//     } catch (error) {
-//         console.error(error);
-//         return false;
-//     }
-// };
+        return !!rolePermission; // Trả về giá trị boolean của rolePermission
+    } catch (error) {
+        console.error(error);
+        return false; // Trả về false nếu có lỗi xảy ra
+    }
+}
 
-// checkPermission(4, 'user_get_details')
-//     .then(result => console.log(result))
-//     .catch(error => console.error(error));
 
 // async function checkUserCreated(userId, activityId) {
 //     try {
@@ -102,4 +99,5 @@ class Helper {
 //     .catch(error => console.error(error));
 
 
-module.exports = Helper;
+module.exports = 
+    Helper;
