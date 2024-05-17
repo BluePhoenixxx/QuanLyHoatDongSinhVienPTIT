@@ -176,6 +176,23 @@ router.get('/student', passport.authenticate('jwt', {
   });
 });
 
+// Get all student
+router.get('/', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'user_get_all').then((rolePerm) => {
+    Student
+          .findAll()
+          .then((student) => res.status(200).send(student))
+          .catch((error) => {
+              res.status(400).send(error);
+          });
+  }).catch((error) => {
+      res.status(403).send(error);
+  });
+});
+
+
 
 // Get all user
 router.get('/university_union', passport.authenticate('jwt', {
