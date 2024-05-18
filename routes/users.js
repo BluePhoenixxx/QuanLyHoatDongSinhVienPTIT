@@ -160,7 +160,7 @@ router.post('/create_union', passport.authenticate('jwt', {
 });
 
 
-// Get all user
+// Get all student
 router.get('/student', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
@@ -176,7 +176,7 @@ router.get('/student', passport.authenticate('jwt', {
   });
 });
 
-// Get all student
+// Get all user
 router.get('/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
@@ -232,42 +232,84 @@ router.get('/:id', passport.authenticate('jwt', {
 });
 
 
-// Update a User
-router.put('/:id', passport.authenticate('jwt', {
-  session: false
-}), function (req, res) {
-  helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
-    if (!req.body.role_id || !req.body.email || !req.body.password || !req.body.fullname || !req.body.phone) {
-      res.status(400).send({
-        msg: 'Please pass Role ID, email, password, phone or fullname.'
-      })
-    } else {
-      User
-        .findByPk(req.params.id)
-        .then((user) => {
-          User.update({
-            username: req.body.username || user.username,
-            password: req.body.password || user.password,
-            status_id: req.body.status_id || user.status_id,
-            role_id: req.body.role_id || user.role_id
-          }, {
-            where: {
-              id: req.params.id
-            }
-          }).then(_ => {
-            res.status(200).send({
-              'message': 'User updated'
-            });
-          }).catch(err => res.status(400).send(err));
-        })
-        .catch((error) => {
-          res.status(400).send(error);
-        });
-    }
-  }).catch((error) => {
-    res.status(403).send(error);
-  });
-});
+// // Update a User
+// router.put('/student/:id', passport.authenticate('jwt', {
+//   session: false
+// }), function (req, res) {
+//   helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
+//     if (!req.body.role_id|| !req.body.password || !req.body.fullname || !req.body.phone) {
+//       res.status(400).send({
+//         msg: 'Please pass Role ID, email, password, phone or fullname.'
+//       })
+//     } else {
+//       User
+//         .findByPk(req.params.id)
+//         .then((user) => {
+//           User.update({
+//             username: req.body.username || user.username,
+//             password: req.body.password || user.password,
+//             status_id: req.body.status_id || user.status_id,
+//             role_id: req.body.role_id || user.role_id
+//           }, {
+//             where: {
+//               id: req.params.id
+//             }
+//           }).then(_ => {
+//             res.status(200).send({
+//               'message': 'User updated'
+//             });
+//           }).catch(err => res.status(400).send(err));
+//         })
+//         .catch((error) => {
+//           res.status(400).send(error);
+//         });
+//     }
+//   }).catch((error) => {
+//     res.status(403).send(error);
+//   });
+// });
+
+
+// // Update a User
+// router.put('/university_union/:id', passport.authenticate('jwt', {
+//   session: false
+// }), function (req, res) {
+//   helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
+//     if (!req.body.role_id|| !req.body.password || !req.body.fullname || !req.body.phone) {
+//       res.status(400).send({
+//         msg: 'Please pass Role ID, email, password, phone or fullname.'
+//       })
+//     } else {
+//       User
+//         .findByPk(req.params.id)
+//         .then((user) => {
+//           User.update({
+//             username: req.body.username || user.username,
+//             password: req.body.password || user.password,
+//             status_id: req.body.status_id || user.status_id,
+//             role_id: req.body.role_id || user.role_id
+//           }, {
+//             where: {
+//               id: req.params.id
+//             }
+//           }).then(_ => {
+//             res.status(200).send({
+//               'message': 'User updated'
+//             });
+//           }).catch(err => res.status(400).send(err));
+//         })
+//         .catch((error) => {
+//           res.status(400).send(error);
+//         });
+//     }
+//   }).catch((error) => {
+//     res.status(403).send(error);
+//   });
+// });
+
+
+
+
 
 // Delete a User
 router.delete('/:id', passport.authenticate('jwt', {

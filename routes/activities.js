@@ -1,27 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const Activity = require('../models').Activity;
+const Register_Act = require('../models').Regier_Act;
+
 const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
 const helper = new Helper();
 const checkPermission2 = require('../utils/checkrole.js');
+const { where } = require('sequelize');
 
-
-
+let role_admin = 1;
+let role_student = 2;   
+let role_uinon = 4
 // Create a new Activities
 router.post('/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_add').then((rolePerm) => {
-        if (!req.body.act_name || !req.body.act_address) {
+        if (!req.body.act_name || !req.body.act_address || !req.body.act_time || !req.body.amount  ) {
             res.status(400).send({
                 msg: 'Please pass Activitity name, status , address or creater.'
             })
         } else {
             let status_id = 1;
             admin = false;
-            if (checkPermission2(req.user.role_id, 'add_act_uncensored') == true){  
+            if (req.user.role_id == role_admin) {  
                 status_id = 2;
                 admin = true;
                 auth = req.user.id;
@@ -70,9 +74,29 @@ router.get('/activities_accept', passport.authenticate('jwt', {
     });
 });
 
+// Get List of Activities created by uinon
+router.get('/activities_union_created', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    try {
+        const hasPermission = await helper.checkPermission(req.user.role_id, 'act_get_all_acp');
+        if (!hasPermission) {
+            return res.status(403).send('Permission denied');
+        }
 
+        const activities = await Activity.findAll({
+            include: {
+                model: User,
+                where: {
+                    role_id: 2
+                }
+            },
+        });
 
-
+        res.status(200).send(activities);
+    } catch (error) {
+        console.error(error);
+        res.status(400).send(error);
+    }
+});
 
 
 // Get List of Activities unaccept
@@ -96,7 +120,7 @@ router.get('/activities_unaccept', passport.authenticate('jwt', {
 });
 
 
-// get list of activities created by user
+// Get list of activities created by user
 router.get('/activities_user_created', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
@@ -199,6 +223,13 @@ router.delete('/:id', passport.authenticate('jwt', {
                 .findByPk(req.params.id)
                 .then((Activity) => {
                     if (Activity) {
+
+                        Register_Act.destroy({
+                            where: {
+                                act_id: req.params.id
+                            }
+                        });
+
                         Activity.destroy({
                             where: {
                                 id: req.params.id

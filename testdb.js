@@ -88,20 +88,27 @@ const dbConfig = {
 // displayAllRoles();
 // const users =  Permission.findAll();
 // console.log(users)
-async function findUserAndUser() {
-  try {
-    const user = await User.findByPk(4);
-    if (user === null) {
-      console.log('User not found!');
-    } else {
-      // console.log(user instanceof User); // true
-      // console.log('User primary key:', user.id); // Assuming 'id' is the primary key field
-      console.log(user);
-    }
-  } catch (error) {
-    console.error('An error occurred:', error);
-  }
-}
+// async function findUserAndUser() {
+//   try {
+//     const registerAct = await Register_Act.findAll({
+//       include: [{
+//           model: Activity,
+//           where: {
+//               id: 2
+//           }
+//       }]
+//   });
+//     if (registerAct === null) {
+//       console.log('User not found!');
+//     } else {
+//       // console.log(user instanceof User); // true
+//       // console.log('User primary key:', user.id); // Assuming 'id' is the primary key field
+//       console.log(user);
+//     }
+//   } catch (error) {
+//     console.error('An error occurred:', error);
+//   }
+// }
 
-// Call the async function
-findUserAndUser();
+// // Call the async function
+// findUserAndUser();

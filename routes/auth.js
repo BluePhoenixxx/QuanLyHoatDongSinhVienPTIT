@@ -57,8 +57,10 @@ router.post('/login', async function (req, res) {
         bcrypt.compare(req.body.password, user.password, function (err, isMatch) {
             if (isMatch && !err) {
                 var token = jwt.sign(JSON.parse(JSON.stringify(user)), 'nodeauthsecret', {
-                    expiresIn: 60 * 30
+                    expiresIn: 60 * 1200
                 });
+
+                
                 jwt.verify(token, 'nodeauthsecret', function (err, data) {
                     console.log(err, data);
                 })

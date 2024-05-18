@@ -5,10 +5,8 @@ const Register_Act = require('../models').Register_Act;
 const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
+const { where } = require('sequelize');
 const helper = new Helper();
-
-
-
 
 // Create a new Activities
 router.post('/', passport.authenticate('jwt', {
@@ -33,16 +31,30 @@ router.post('/', passport.authenticate('jwt', {
 
 
 
-// Get Activities by ID 
-router.get('/get_accept_register', passport.authenticate('jwt', {
+// Get register activities
+router.get('/', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'get_accept_register').then((rolePerm) => {
+        Register_Act.findAll()
+            .then((Register_Act) => res.status(200).send(Register_Act))
+            .catch((error) => {
+                res.status(400).send(error);
+            });
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
+
+// Get register activities by id
+router.get('/get_accept_register/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get_accept_register').then((rolePerm) => {
         Register_Act.findAll({
-            include: [{
-                model: Activity,
-                where: sequelize.literal(`Activity.creater_id = ${req.user.id}`)
-            }]
+            where: {
+                act_id: req.params.id
+            }
         })
             .then((Register_Act) => res.status(200).send(Register_Act))
             .catch((error) => {
@@ -55,79 +67,71 @@ router.get('/get_accept_register', passport.authenticate('jwt', {
 
 
 
-// Update a Activitity
-router.put('/:id', passport.authenticate('jwt', {
-    session: false
-}), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
-        if (!req.body.prod_name || !req.body.prod_description || !req.body.prod_image || !req.body.prod_price) {
-            res.status(400).send({
-                msg: 'Please pass Activity name, description, image or price.'
-            })
-        } else {
-            Activity
-                .findByPk(req.params.id)
-                .then((Activity) => {
-                    Activity.update({
-                        prod_name: req.body.prod_name || user.prod_name,
-                        prod_description: req.body.prod_description || user.prod_description,
-                        prod_image: req.body.prod_image || user.prod_image,
-                        prod_price: req.body.prod_price || user.prod_price
-                    }, {
-                        where: {
-                            id: req.params.id
-                        }
-                    }).then(_ => {
-                        res.status(200).send({
-                            'message': 'Activity updated'
-                        });
-                    }).catch(err => res.status(400).send(err));
-                })
-                .catch((error) => {
-                    res.status(400).send(error);
-                });
-        }
-    }).catch((error) => {
-        res.status(403).send(error);
-    });
-});
+// Update a Register by id
+// router.put('/:id', passport.authenticate('jwt', {
+//     session: false
+// }), function (req, res) {
+//     helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
+//             Register_Act
+//                 .findByPk(req.params.id)
+//                 .then((Activity) => {
+//                     Register_Act.update({
+//                         status_id: req.body.status_id
+//                     }, {
+//                         where: {
+//                             id: req.params.id
+//                         }
+//                     }).then(_ => {
+//                         res.status(200).send({
+//                             'message': 'Register updated'
+//                         });
+//                     }).catch(err => res.status(400).send(err));
+//                 })
+//                 .catch((error) => {
+//                     res.status(400).send(error);
+//                 });
+ 
+//     }).catch((error) => {
+//         res.status(403).send(error);
+//     });
+// });
 
-// Delete a Activitity
-router.delete('/:id', passport.authenticate('jwt', {
-    session: false
-}), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
-        if (!req.params.id) {
-            res.status(400).send({
-                msg: 'Please pass Activity ID.'
-            })
-        } else {
-            Activity
-                .findByPk(req.params.id)
-                .then((Activity) => {
-                    if (Activity) {
-                        Activity.destroy({
-                            where: {
-                                id: req.params.id
-                            }
-                        }).then(_ => {
-                            res.status(200).send({
-                                'message': 'Activity deleted'
-                            });
-                        }).catch(err => res.status(400).send(err));
-                    } else {
-                        res.status(404).send({
-                            'message': 'Activity not found'
-                        });
-                    }
-                })
-                .catch((error) => {
-                    res.status(400).send(error);
-                });
-        }
-    }).catch((error) => {
-        res.status(403).send(error);
-    });
-});
+// // Delete a 
+// router.delete('/:id', passport.authenticate('jwt', {
+//     session: false
+// }), function (req, res) {
+//     helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
+//         if (!req.params.id) {
+//             res.status(400).send({
+//                 msg: 'Please pass Activity ID.'
+//             })
+//         } else {
+//             Activity
+//                 .findByPk(req.params.id)
+//                 .then((Activity) => {
+//                     if (Activity) {
+//                         Activity.destroy({
+//                             where: {
+//                                 id: req.params.id
+//                             }
+//                         }).then(_ => {
+//                             res.status(200).send({
+//                                 'message': 'Activity deleted'
+//                             });
+//                         }).catch(err => res.status(400).send(err));
+//                     } else {
+//                         res.status(404).send({
+//                             'message': 'Activity not found'
+//                         });
+//                     }
+//                 })
+//                 .catch((error) => {
+//                     res.status(400).send(error);
+//                 });
+//         }
+//     }).catch((error) => {
+//         res.status(403).send(error);
+//     });
+// });
 
 module.exports = router;

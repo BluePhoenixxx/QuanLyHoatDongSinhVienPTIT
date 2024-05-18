@@ -8,6 +8,7 @@ const checkPermission2 = async (roleId, permName) => {
                 perm_name: permName
             }
         });
+        
         if (!perm) return false;
 
         const rolePermission = await RolePermission.findOne({
@@ -16,13 +17,20 @@ const checkPermission2 = async (roleId, permName) => {
                 perm_id: perm.id
             }
         });
-        return !(rolePermission == null); // Trả về giá trị boolean của rolePermission
+
+        return rolePermission !== null;
     } catch (error) {
         console.error(error);
         return false;
     }
 };
 
+// Example usage with top-level await in an ES module
+// const roleId = 1;
+// const permName = 'example_permission';
+
+// const hasPermission =  checkPermission2(roleId, permName);
+// console.log(hasPermission); // true or false
 
 
 module.exports = checkPermission2;
