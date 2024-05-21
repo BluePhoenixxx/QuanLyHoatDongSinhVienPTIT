@@ -66,7 +66,8 @@ router.post('/login', async function (req, res) {
                 })
                 res.json({
                     success: true,
-                    token: 'JWT ' + token
+                    token: 'JWT ' + token,
+                    role : user.role_id
                 });
             } else {
                 res.status(401).send({
