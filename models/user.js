@@ -1,3 +1,5 @@
+
+
 var bcrypt = require('bcryptjs');
 'use strict';
 const {
@@ -13,7 +15,7 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       User.belongsTo(models.Role, {foreignKey: 'role_id', as: 'UserRole'});
       User.belongsTo(models.Status_Account, {foreignKey: 'status_id', as: 'status'});
-      User.hasMany(models.Activity, { foreignKey: '' });
+      User.hasMany(models.Activity, { foreignKey: 'creater_id', as: 'activities' });
     }
   }
   User.init({

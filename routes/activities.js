@@ -9,6 +9,7 @@ const Helper = require('../utils/helper');
 const helper = new Helper();
 const checkPermission2 = require('../utils/checkrole.js');
 const { where } = require('sequelize');
+// const { removeListener } = require('../app.js');
 
 let role_admin = 1;
 let role_student = 2;   
@@ -74,28 +75,38 @@ router.get('/activities_accept', passport.authenticate('jwt', {
     });
 });
 
-// Get List of Activities created by uinon
-router.get('/activities_union_created', passport.authenticate('jwt', { session: false }), async (req, res) => {
-    try {
-        const hasPermission = await helper.checkPermission(req.user.role_id, 'act_get_all_acp');
-        if (!hasPermission) {
-            return res.status(403).send('Permission denied');
-        }
 
-        const activities = await Activity.findAll({
-            include: {
-                model: User,
-                where: {
-                    role_id: 2
-                }
-            },
-        });
-
-        res.status(200).send(activities);
-    } catch (error) {
-        console.error(error);
-        res.status(400).send(error);
-    }
+// Get List of Activities union created by role
+router.get('/activities_union_created', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+        const user = User.findAll({
+            where: {
+                role_id: 4
+            }
+        })
+        console.log(user);
+        Activity
+            .findAll({
+                include: [
+                    {
+                        model: User,
+                        where: {
+                            id: 10
+                        },
+                        required: true // Ensures an inner join
+                    }
+                ]
+            }
+            )
+            .then((Activitys) => res.status(200).send(Activitys))
+            .catch((error) => {
+                res.status(400).send(error);
+            });
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
 });
 
 

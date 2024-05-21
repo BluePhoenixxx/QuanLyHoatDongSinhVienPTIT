@@ -2,6 +2,7 @@ const { Sequelize,DataTypes, where } = require('sequelize');
 const Role = require('./models').Role;
 const RolePermission = require('./models').RolePermission;
 const User = require('./models').User;
+const Activity  = require('./models').Activity;
 const Permission = require('./models').Permission;
 // Thông tin kết nối đến cơ sở dữ liệu MySQL
 const dbConfig = {
@@ -12,7 +13,8 @@ const dbConfig = {
   port: 3306,
   dialect: 'mysql'
 };
-
+const jwt = require('jsonwebtoken');
+const activity = require('./models/activity');
 
 // Khởi tạo đối tượng Sequelize với thông tin kết nối
 
@@ -103,7 +105,7 @@ const dbConfig = {
 //     } else {
 //       // console.log(user instanceof User); // true
 //       // console.log('User primary key:', user.id); // Assuming 'id' is the primary key field
-//       console.log(user);
+//       console.log(user); 
 //     }
 //   } catch (error) {
 //     console.error('An error occurred:', error);
@@ -111,4 +113,49 @@ const dbConfig = {
 // }
 
 // // Call the async function
-// findUserAndUser();
+// // findUserAndUser();
+// function verifyToken(token) {
+//   try {
+//       // Remove 'JWT ' prefix from the token string if it exists
+//       if (token.startsWith('JWT ')) {
+//           token = token.slice(4);
+//       }
+
+//       // Verify and decode the token using the secret key
+//       const decoded = jwt.verify(token, 'nodeauthsecret');
+//       return {
+//           success: true,
+//           data: decoded
+//       };
+//   } catch (err) {
+//       // Handle errors: invalid token, token expired, etc.
+//       return {
+//           success: false,
+//           message: 'Invalid token'
+//       };
+//   }
+// }
+
+
+async function findUserAndUser() {
+  try {
+    const registerAct = await Activity.findAll({
+      include: [{
+          model: Activity,
+          where: {
+              id: 2
+          }
+      }]
+  });
+    if (registerAct === null) {
+      console.log('User not found!');
+    } else {
+      // console.log(user instanceof User); // true
+      // console.log('User primary key:', user.id); // Assuming 'id' is the primary key field
+      console.log(user); 
+    }
+  } catch (error) {
+    console.error('An error occurred:', error);
+  }
+}
+findUserAndUser()
