@@ -13,7 +13,7 @@ const helper = new Helper();
 let role_uinon = 4;
 let role_admin = 1;
 let role_student = 2;
-
+const Sequelize = require('sequelize');
 // Create a new User Student
 router.post('/create_student', passport.authenticate('jwt', {
   session: false
@@ -181,8 +181,13 @@ router.get('/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'user_get_all').then((rolePerm) => {
-    Student
-          .findAll()
+    User.findAll({
+      where: {
+        role_id: {
+          [Sequelize.Op.ne]: 1 // Sequelize operator for "not equal"
+        }
+      }
+    })
           .then((student) => res.status(200).send(student))
           .catch((error) => {
               res.status(400).send(error);

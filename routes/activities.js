@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const Activity = require('../models').Activity;
 const Register_Act = require('../models').Regier_Act;
-
+const User = require('../models').User;
+const Sequelize = require('sequelize');
 const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
@@ -76,30 +77,77 @@ router.get('/activities_accept', passport.authenticate('jwt', {
 });
 
 
-// Get List of Activities union created by role
+//Statistical Activities accept    
+router.get('/statistical', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    const year = req.query.year ? parseInt(req.query.year, 10) : null;
+    const month = req.query.month ? parseInt(req.query.month, 10) - 1 : null; // JavaScript months are 0-11
+    const limit = req.query.limit ? parseInt(req.query.limit, 10) : null;
+
+    // Validate the parameters
+    if ((year && isNaN(year)) || (month && (isNaN(month) || month < 0 || month > 11)) || (limit && (isNaN(limit) || limit <= 0))) {
+        return res.status(400).send({ message: 'Invalid parameters' });
+    }
+
+    // Calculate the start and end dates for the given month and year, if provided
+    let dateFilter = {};
+    if (year !== null && month !== null) {
+        const startDate = new Date(year, month, 1);
+        const endDate = new Date(year, month + 1, 0, 23, 59, 59); // Last second of the month
+        dateFilter = {
+            act_time: {
+                [Sequelize.Op.between]: [startDate, endDate]
+            }
+        };
+    } else if (year !== null) {
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31, 23, 59, 59); // Entire year
+        dateFilter = {
+            act_time: {
+                [Sequelize.Op.between]: [startDate, endDate]
+            }
+        };
+    }
+
+    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+        Activity
+            .findAll({
+                where: year !== null ? dateFilter : {},
+                order: [['act_time', 'DESC']],
+                limit: limit
+            })
+            .then((activities) => {
+                if (activities.length > 0) {
+                    res.status(200).send(activities);
+                } else {
+                    res.status(404).send({ message: 'No activities found' });
+                }
+            })
+            .catch((error) => {
+                res.status(400).send(error);
+            }); 
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
+
+
+
+// Get all Activities created by activity union
 router.get('/activities_union_created', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
-        const user = User.findAll({
-            where: {
-                role_id: 4
+        Activity.findAll({
+            include: {
+              model: User,
+              as : 'creater',
+              where: {
+                role_id: role_uinon
+              }
             }
         })
-        console.log(user);
-        Activity
-            .findAll({
-                include: [
-                    {
-                        model: User,
-                        where: {
-                            id: 10
-                        },
-                        required: true // Ensures an inner join
-                    }
-                ]
-            }
-            )
             .then((Activitys) => res.status(200).send(Activitys))
             .catch((error) => {
                 res.status(400).send(error);
@@ -109,6 +157,26 @@ router.get('/activities_union_created', passport.authenticate('jwt', {
     });
 });
 
+// Get all Activities created by activity student
+router.get('/activities_student_created', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+        Activity.findAll({
+            include: {
+              model: User,
+              as : 'creater',
+              where: { role_id : role_student}
+            }
+        })
+            .then((Activitys) => res.status(200).send(Activitys))
+            .catch((error) => {
+                res.status(400).send(error);
+            });
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
 
 // Get List of Activities unaccept
 router.get('/activities_unaccept', passport.authenticate('jwt', {

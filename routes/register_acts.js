@@ -29,8 +29,6 @@ router.post('/', passport.authenticate('jwt', {
     });
 });
 
-
-
 // Get register activities
 router.get('/', passport.authenticate('jwt', {
     session: false
@@ -66,35 +64,50 @@ router.get('/get_accept_register/:id', passport.authenticate('jwt', {
 });
 
 
+// Get register activities by id 
+router.get('/:id', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'act_get').then((rolePerm) => {
+        Register_Act
+            .findByPk(req.params.id)
+            .then((Register_Act) => res.status(200).send(Register_Act))
+            .catch((error) => {
+                res.status(400).send(error);
+            }); 
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
 
 // Update a Register by id
-// router.put('/:id', passport.authenticate('jwt', {
-//     session: false
-// }), function (req, res) {
-//     helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
-//             Register_Act
-//                 .findByPk(req.params.id)
-//                 .then((Activity) => {
-//                     Register_Act.update({
-//                         status_id: req.body.status_id
-//                     }, {
-//                         where: {
-//                             id: req.params.id
-//                         }
-//                     }).then(_ => {
-//                         res.status(200).send({
-//                             'message': 'Register updated'
-//                         });
-//                     }).catch(err => res.status(400).send(err));
-//                 })
-//                 .catch((error) => {
-//                     res.status(400).send(error);
-//                 });
+router.put('/:id', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
+            Register_Act
+                .findByPk(req.params.id)
+                .then((Regier_Act) => {
+                    Register_Act.update({
+                        status_id: req.body.status_id
+                    }, {
+                        where: {
+                            id: req.params.id
+                        }
+                    }).then(_ => {
+                        res.status(200).send({
+                            'message': 'Register updated'
+                        });
+                    }).catch(err => res.status(400).send(err));
+                })
+                .catch((error) => {
+                    res.status(400).send(error);
+                });
  
-//     }).catch((error) => {
-//         res.status(403).send(error);
-//     });
-// });
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
 
 // // Delete a 
 // router.delete('/:id', passport.authenticate('jwt', {
