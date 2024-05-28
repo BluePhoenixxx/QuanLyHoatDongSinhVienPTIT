@@ -3,6 +3,7 @@ const router = express.Router();
 const Activity = require('../models').Activity;
 const Register_Act = require('../models').Regier_Act;
 const User = require('../models').User;
+const Notification = require('../models').Notification;
 const Sequelize = require('sequelize');
 const passport = require('passport');
 require('../config/passport')(passport);
@@ -15,6 +16,9 @@ const { where } = require('sequelize');
 let role_admin = 1;
 let role_student = 2;   
 let role_uinon = 4
+let status_act_accept = 2;
+let status_act_reject = 4;
+let object_create = 1;
 // Create a new Activities
 router.post('/', passport.authenticate('jwt', {
     session: false
@@ -76,7 +80,6 @@ router.get('/activities_accept', passport.authenticate('jwt', {
     });
 });
 
-
 //Statistical Activities accept    
 router.get('/statistical', passport.authenticate('jwt', {
     session: false
@@ -131,8 +134,6 @@ router.get('/statistical', passport.authenticate('jwt', {
         res.status(403).send(error);
     });
 });
-
-
 
 // Get all Activities created by activity union
 router.get('/activities_union_created', passport.authenticate('jwt', {
@@ -198,7 +199,6 @@ router.get('/activities_unaccept', passport.authenticate('jwt', {
     });
 });
 
-
 // Get list of activities created by user
 router.get('/activities_user_created', passport.authenticate('jwt', {
     session: false
@@ -218,6 +218,125 @@ router.get('/activities_user_created', passport.authenticate('jwt', {
         res.status(403).send(error);
     });
 });
+
+// // Put activity accept
+// router.put('/activities_union_created/:id', passport.authenticate('jwt', {
+//     session: false
+// }), function (req, res) {
+//     const staus_act = req.query.status ? parseInt(req.query.status, 10) : null;
+//     helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
+//             console.log(staus);
+//             Activity
+//                 .findByPk(req.params.id)
+//                 .then(() => {
+//                     Activity.update({
+//                         act_status : staus 
+//                     }, {
+//                         where: {
+//                             id: req.params.id
+//                         }
+//                     }).then(_ => {
+//                         if (staus_act = status_act_accept ) {
+//                             mess = 'Your activity ' + activity.act_name + ' has been accepted';
+//                         } else {
+//                             mess = 'Your activity ' + activity.act_name + ' has been rejected';
+//                         Notification.create({
+//                                 act_id: Activity.id,
+//                                 user_id: Activity.creater_id,
+//                                 object_id: object_create,
+//                                 message: mess
+//                             }).then(() => {
+//                                 res.status(200).send({
+//                                     'message': 'Activity updated and notification created'  
+//                                 });
+//                             }).catch(err => res.status(400).send(err));
+
+//                         res.status(200).send({
+//                             'message': 'Activity updated'
+//                         });
+//                 }}).catch(err => res.status(400).send(err));
+//                 })
+//                 .catch((error) => {
+//                     res.status(400).send(error);
+//                 });
+//     }).catch((error) => {
+//         res.status(403).send(error);
+//     })
+
+// });
+
+// router.put('/activities_union_created/:id', passport.authenticate('jwt', {
+//     session: false
+// }), function (req, res) {
+//     const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
+
+//     helper.checkPermission(req.user.role_id, 'act_update').then(() => {
+//         Activity.findByPk(req.params.id).then((activity) => {
+//             if (!activity) {
+//                 return res.status(404).send({ message: 'Activity not found' });
+//             }
+
+//             activity.update({ act_status: status_act }).then(() => {
+//                 let mess;
+//                 if (status_act === STATUS_ACT_ACCEPT) {
+//                     mess = `Your activity ${activity.act_name} has been accepted`;
+//                 } else {
+//                     mess = `Your activity ${activity.act_name} has been rejected`;
+//                 }
+
+//                 Notification.create({
+//                     act_id: activity.id,
+//                     user_id: activity.creater_id,
+//                     object_id: activity.id, // Assuming object_id is the activity id
+//                     message: mess
+//                 }).then(() => {
+//                     res.status(200).send({ message: 'Activity updated and notification created' });
+//                 }).catch(err => res.status(400).send(err));
+//             }).catch(err => res.status(400).send(err));
+//         }).catch(err => res.status(400).send(err));
+//     }).catch(err => res.status(403).send(err));
+// });
+
+router.put('/activities_union_created/:id', passport.authenticate('jwt', {
+    session: false
+}), async function (req, res) {
+    const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
+
+    try {
+        await helper.checkPermission(req.user.role_id, 'act_update');
+
+        const activity = await Activity.findByPk(req.params.id);
+        if (!activity) {
+            return res.status(404).send({ message: 'Activity not found' });
+        }
+
+        await activity.update({ act_status: status_act,
+            audit_id: req.user.id 
+        });
+        if (status_act === status_act_accept) {
+            mess = `Hoạt động của bạn `  + activity.act_name + ` đã được duyệt tổ chức`;
+        } else if (status_act === status_act_reject) {
+            mess = `Hoạt động của bạn `  + activity.act_name + ` đã không được duyệt tổ chức`;}
+
+                await Notification.create({
+                    act_id: activity.id,
+                    user_id: activity.creater_id,
+                    object_id: object_create, // Assuming object_id is the activity id
+                    message: mess
+                });
+
+        res.status(200).send({ message: 'Activity updated and notification created' });
+    } catch (err) {
+        if (err.message === 'Permission denied') {
+            res.status(403).send({ message: 'Permission denied', error: err });
+        } else if (err.message === 'Activity not found') {
+            res.status(404).send({ message: 'Activity not found', error: err });
+        } else {
+            res.status(400).send({ message: 'An error occurred', error: err });
+        }
+    }
+});
+
 
 // Get List of Activities
 router.get('/', passport.authenticate('jwt', {

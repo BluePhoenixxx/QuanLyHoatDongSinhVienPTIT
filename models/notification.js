@@ -17,10 +17,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   Notification.init({
-    object_id: DataTypes.INTEGER,
     message: DataTypes.STRING,
-    create_time: DataTypes.DATE,
-    obj_id: DataTypes.INTEGER,
+    object_id: DataTypes.INTEGER,
     act_id: DataTypes.INTEGER
   }, {
     sequelize,
