@@ -83,7 +83,6 @@ router.put('/:id', passport.authenticate('jwt', {
     });
 });
 
-
 // Delete a permission
 router.delete('/:id', passport.authenticate('jwt', {
     session: false

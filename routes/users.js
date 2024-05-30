@@ -3,43 +3,46 @@ const router = express.Router();
 const User = require('../models').User;
 const Role = require('../models').Role;
 const Student = require('../models').Student;
+var bcrypt = require('bcryptjs');
 const University_Union = require('../models').University_Union;
+const Notification = require('../models').Notification;
 const passport = require('passport');
+const Activity = require('../models').Activity
+const variable = require('../utils/variable.js');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
 const student = require('../models/student');
 const { sequelize } = require('../models');
 const helper = new Helper();
-let role_uinon = 4;
-let role_admin = 1;
-let role_student = 2;
+
 const Sequelize = require('sequelize');
+const { Where } = require('sequelize/lib/utils');
 // Create a new User Student
 router.post('/create_student', passport.authenticate('jwt', {
   session: false
 }), async function (req, res) {
   const t = await sequelize.transaction(); 
   try {
-    // Kiểm tra quyền hạn của người dùng
+
     const rolePerm = await helper.checkPermission(req.user.role_id, 'user_add');
 
-    if ( !req.body.password || !req.body.username || !req.body.MSSV || !req.body.first_name || !req.body.last_name || !req.body.phone ||  !req.body.class_id || !req.body.mail || !req.body.gender_id || !req.body.birth_date) {
+    if ( !req.body.password || !req.body.username || !req.body.MSSV || !req.body.first_name || !req.body.last_name || !req.body.phone ||  !req.body.class_id || !req.body.email || !req.body.gender_id || !req.body.birth_date) {
       return res.status(400).send({
-        msg: 'Please pass Role ID, username, password'
+        msg: 'Please pass  username, password, MSSV, first_name, last_name, phone, class_id, mail, gender_id, birth_date'
       });
     }
-    // Tạo người dùng
+
     const user = await User.create({
       username: req.body.username,
       password: req.body.password,
-      role_id: 2,
-      status_id: 1
+      role_id: variable.role_student,
+      status_id: variable.status_active
     }, { transaction: t });
 
-    // Lấy user.id từ người dùng mới tạo
+
     const userId = user.id;
 
-    // Tạo sinh viên với account_id được gán từ user.id
+
     const student = await Student.create({
       MSSV: req.body.MSSV,
       first_name: req.body.first_name,
@@ -48,27 +51,21 @@ router.post('/create_student', passport.authenticate('jwt', {
       address: req.body.address,
       position : req.body.position,
       class_id: req.body.class_id,
-      mail: req.body.mail,
+      email: req.body.email,
       gender_id: req.body.gender_id,
-      birth_date: req.body.birth_date,
+      birthday: req.body.birth_date,
       account_id: userId // Gán user.id cho account_id của sinh viên
     }, { transaction: t });
-
     // Commit transaction nếu không có lỗi xảy ra
     await t.commit();
-
-    // Trả về kết quả thành công
     return res.status(201).send({ user, student });
   } catch (error) {
-    // Rollback transaction nếu có lỗi xảy ra
     await t.rollback();
 
     console.log(error);
-    // Trả về lỗi nếu có lỗi xảy ra
     return res.status(400).send(error);
   }
 });
-
 
 // Get details user
 router.get('/details', passport.authenticate('jwt', {
@@ -80,7 +77,7 @@ router.get('/details', passport.authenticate('jwt', {
       res.status(403).send(error);
   });
   
-  if (role_uinon == req.user.role_id){
+  if (variable.role_union == req.user.role_id){
     University_Union
     .findOne({
       where : {
@@ -106,8 +103,7 @@ router.get('/details', passport.authenticate('jwt', {
   
 });
 
-
-
+// Create a new User union
 router.post('/create_union', passport.authenticate('jwt', {
   session: false
 }), async function (req, res) {
@@ -159,12 +155,11 @@ router.post('/create_union', passport.authenticate('jwt', {
   }
 });
 
-
 // Get all student
 router.get('/student', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
-  helper.checkPermission(req.user.role_id, 'user_get_all').then((rolePerm) => {
+  helper.checkPermission(req.user.role_id, 'get_all_student').then((rolePerm) => {
     Student
           .findAll()
           .then((perms) => res.status(200).send(perms))
@@ -184,7 +179,7 @@ router.get('/', passport.authenticate('jwt', {
     User.findAll({
       where: {
         role_id: {
-          [Sequelize.Op.ne]: 1 // Sequelize operator for "not equal"
+          [Sequelize.Op.ne]: variable.role_admin // Sequelize operator for "not equal"
         }
       }
     })
@@ -197,9 +192,7 @@ router.get('/', passport.authenticate('jwt', {
   });
 });
 
-
-
-// Get all user
+// Get all user union
 router.get('/university_union', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
@@ -214,7 +207,6 @@ router.get('/university_union', passport.authenticate('jwt', {
       res.status(403).send(error);
   });
 });
-
 
 // Get user by ID
 router.get('/:id', passport.authenticate('jwt', {
@@ -236,91 +228,120 @@ router.get('/:id', passport.authenticate('jwt', {
       });
 });
 
-
 // // Update a User
-// router.put('/student/:id', passport.authenticate('jwt', {
-//   session: false
-// }), function (req, res) {
-//   helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
-//     if (!req.body.role_id|| !req.body.password || !req.body.fullname || !req.body.phone) {
-//       res.status(400).send({
-//         msg: 'Please pass Role ID, email, password, phone or fullname.'
-//       })
-//     } else {
-//       User
-//         .findByPk(req.params.id)
-//         .then((user) => {
-//           User.update({
-//             username: req.body.username || user.username,
-//             password: req.body.password || user.password,
-//             status_id: req.body.status_id || user.status_id,
-//             role_id: req.body.role_id || user.role_id
-//           }, {
-//             where: {
-//               id: req.params.id
-//             }
-//           }).then(_ => {
-//             res.status(200).send({
-//               'message': 'User updated'
-//             });
-//           }).catch(err => res.status(400).send(err));
-//         })
-//         .catch((error) => {
-//           res.status(400).send(error);
-//         });
-//     }
-//   }).catch((error) => {
-//     res.status(403).send(error);
-//   });
-// });
+router.put('/:id', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
+    if (req.body.password) {
+      userpass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(12), null);
+    }
+      User
+        .findByPk(req.params.id)
+        .then((user) => {
+          User.update({
+            username: req.body.username || user.username,
+            password: userpass || user.password,
+            status_id: req.body.status_id || user.status_id,
+            role_id: req.body.role_id || user.role_id
+          }, {
+            where: {
+              id: req.params.id
+            }
+          }).then(_ => {
+            res.status(200).send({
+              'message': 'User updated'
+            });
+          }).catch(err => res.status(400).send(err));
+        })
+        .catch((error) => {
+          res.status(400).send(error);
+        });
+    }
+  ).catch((error) => {
+    res.status(403).send(error);
+  });
+});
 
+// Update a User union
+router.put('/university_union/:id', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'update_details_union').then((rolePerm) => {
 
-// // Update a User
-// router.put('/university_union/:id', passport.authenticate('jwt', {
-//   session: false
-// }), function (req, res) {
-//   helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
-//     if (!req.body.role_id|| !req.body.password || !req.body.fullname || !req.body.phone) {
-//       res.status(400).send({
-//         msg: 'Please pass Role ID, email, password, phone or fullname.'
-//       })
-//     } else {
-//       User
-//         .findByPk(req.params.id)
-//         .then((user) => {
-//           User.update({
-//             username: req.body.username || user.username,
-//             password: req.body.password || user.password,
-//             status_id: req.body.status_id || user.status_id,
-//             role_id: req.body.role_id || user.role_id
-//           }, {
-//             where: {
-//               id: req.params.id
-//             }
-//           }).then(_ => {
-//             res.status(200).send({
-//               'message': 'User updated'
-//             });
-//           }).catch(err => res.status(400).send(err));
-//         })
-//         .catch((error) => {
-//           res.status(400).send(error);
-//         });
-//     }
-//   }).catch((error) => {
-//     res.status(403).send(error);
-//   });
-// });
+    University_Union
+        .findByPk(req.params.id)
+        .then((union) => {
+          University_Union.update({
+            first_name: req.body.first_name || union.first_name,
+            last_name: req.body.last_name || union.last_name,
+            phone : req.body.phone || union.phone,
+            address: req.body.address || union.address,
+            position: req.body.position || union.position,
+            mail: req.body.mail || union.mail,
 
+          }, {
+            where: {
+              id: req.params.id
+            }
+          }).then(_ => {
+            res.status(200).send({
+              'message': 'User updated'
+            });
+          }).catch(err => res.status(400).send(err));
+        })
+        .catch((error) => {
+          res.status(400).send(error);
+        });
+    }
+  ).catch((error) => {
+    res.status(403).send(error);
+  });
+});
 
+// Update a student
+router.put('/student/:MSSV', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'update_info_student').then((rolePerm) => {
+    
+    Student
+        .findByPk(req.params.MSSV)
+        .then((student) => {
+          Student.update({
+            first_name: req.body.first_name || student.first_name,
+            last_name: req.body.last_name || student.last_name,
+            phone : req.body.phone || student.phone,
+            address: req.body.address || student.address,
+            position: req.body.position || student.position,
+            email: req.body.email || student.email,
+            birthday: req.body.birthday || student.birthday,
+            class_id: req.body.class_id || student.class_id
 
-
+          }, {
+            where: {
+              MSSV: req.params.MSSV 
+            }
+          }).then(_ => {
+            res.status(200).send({
+              'message': 'User updated'
+            });
+          }).catch(err => res.status(400).send(err));
+        })
+        .catch((error) => {
+          res.status(400).send(error);
+        });
+    }
+  ).catch((error) => {
+    res.status(403).send(error);
+  });
+});
 
 // Delete a User
 router.delete('/:id', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
-  helper.checkPermission(req.user.role_id, 'role_delete').then((rolePerm) => {
+  helper.checkPermission(req.user.role_id, 'user_delete').then((rolePerm) => {
     if (!req.params.id) {
       res.status(400).send({
         msg: 'Please pass user ID.'
@@ -331,7 +352,7 @@ router.delete('/:id', passport.authenticate('jwt', {
         .then((user) => {
           if (user) {
             // Delete user
-            if (user.role_id == role_uinon) {
+            if (user.role_id == variable.role_union) {
               University_Union.destroy({
                 where: {
                   account_id: req.params.id
@@ -344,6 +365,13 @@ router.delete('/:id', passport.authenticate('jwt', {
                 }
               });
             }
+
+            Notification.destroy({
+              where:{
+                user_id : req.params.id
+              }
+            })
+            
 
             User.destroy({
               where: {

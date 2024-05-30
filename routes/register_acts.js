@@ -12,6 +12,8 @@ let object_register = 2;
 let status_act_accept = 2;
 let status_act_reject = 4;
 // Create a new Activities
+
+// Create register activites
 router.post('/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
@@ -47,7 +49,7 @@ router.get('/', passport.authenticate('jwt', {
     });
 });
 
-// Get register activities by id
+// Get register activities by id activity
 router.get('/get_accept_register/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
@@ -65,7 +67,6 @@ router.get('/get_accept_register/:id', passport.authenticate('jwt', {
         res.status(403).send(error);
     });
 });
-
 
 // Get register activities by id 
 router.get('/:id', passport.authenticate('jwt', {
@@ -113,6 +114,7 @@ router.put('/:id', passport.authenticate('jwt', {
                     act_id: activity.id,
                     user_id: register.creater_id,
                     object_id: object_register, // Assuming object_id is the activity id
+                    user_id: req.user.id,
                     message: mess
                 });
 
@@ -127,43 +129,43 @@ router.put('/:id', passport.authenticate('jwt', {
         }
     }
 });
-
-// // Delete a 
-// router.delete('/:id', passport.authenticate('jwt', {
-//     session: false
-// }), function (req, res) {
-//     helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
-//         if (!req.params.id) {
-//             res.status(400).send({
-//                 msg: 'Please pass Activity ID.'
-//             })
-//         } else {
-//             Activity
-//                 .findByPk(req.params.id)
-//                 .then((Activity) => {
-//                     if (Activity) {
-//                         Activity.destroy({
-//                             where: {
-//                                 id: req.params.id
-//                             }
-//                         }).then(_ => {
-//                             res.status(200).send({
-//                                 'message': 'Activity deleted'
-//                             });
-//                         }).catch(err => res.status(400).send(err));
-//                     } else {
-//                         res.status(404).send({
-//                             'message': 'Activity not found'
-//                         });
-//                     }
-//                 })
-//                 .catch((error) => {
-//                     res.status(400).send(error);
-//                 });
-//         }
-//     }).catch((error) => {
-//         res.status(403).send(error);
-//     });
-// });
+ 
+// Delete register
+router.delete('/:id', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
+        if (!req.params.id) {
+            res.status(400).send({
+                msg: 'Please pass Activity ID.'
+            })
+        } else {
+            Register_Act
+                .findByPk(req.params.id)
+                .then((Activity) => {
+                    if (Activity) {
+                        Activity.destroy({
+                            where: {
+                                id: req.params.id
+                            }
+                        }).then(_ => {
+                            res.status(200).send({
+                                'message': 'Register deleted'
+                            });
+                        }).catch(err => res.status(400).send(err));
+                    } else {
+                        res.status(404).send({
+                            'message': 'Register not found'
+                        });
+                    }
+                })
+                .catch((error) => {
+                    res.status(400).send(error);
+                });
+        }
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
 
 module.exports = router;

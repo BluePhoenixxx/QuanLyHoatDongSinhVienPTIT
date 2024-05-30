@@ -15,7 +15,8 @@ module.exports = (sequelize, DataTypes) => {
     static associate(models) {
       User.belongsTo(models.Role, {foreignKey: 'role_id', as: 'UserRole'});
       User.belongsTo(models.Status_Account, {foreignKey: 'status_id', as: 'status'});
-      User.hasMany(models.Activity, { foreignKey: 'creater_id', as: 'activities' });
+      User.hasMany(models.Activity, { foreignKey: 'creater_id', as: 'activities', onDelete: 'CASCADE'});
+      User.hasOne(models.Student, {foreignKey :'account_id', as : 'account', onDelete : 'CASCADE'})
     }
   }
   User.init({
@@ -31,9 +32,10 @@ module.exports = (sequelize, DataTypes) => {
 
   User.beforeSave(async (user, options) => {
     if (user.password) {
-      user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(10), null);
+      user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(12), null);
     }
   });
+
   User.prototype.comparePassword = function (passw, cb) {
     bcrypt.compare(passw, this.password, function (err, isMatch) {
         if (err) {

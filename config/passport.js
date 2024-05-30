@@ -3,11 +3,11 @@ const JwtStrategy = require('passport-jwt').Strategy,
 
 // load up the user model
 const User = require('../models').User;
-
+const variable = require('../utils/variable.js');
 module.exports = function(passport) {
   const opts = {
     jwtFromRequest: ExtractJwt.fromAuthHeaderWithScheme('JWT'),
-    secretOrKey: 'nodeauthsecret',
+    secretOrKey: variable.secret_key,
   };
   passport.use('jwt', new JwtStrategy(opts, function(jwt_payload, done) {
     User

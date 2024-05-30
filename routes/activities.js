@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Activity = require('../models').Activity;
-const Register_Act = require('../models').Regier_Act;
+const Register_Act = require('../models').Register_Act;
 const User = require('../models').User;
 const Notification = require('../models').Notification;
 const Sequelize = require('sequelize');
@@ -11,30 +11,25 @@ const Helper = require('../utils/helper');
 const helper = new Helper();
 const checkPermission2 = require('../utils/checkrole.js');
 const { where } = require('sequelize');
-// const { removeListener } = require('../app.js');
+const variable = require('../utils/variable.js');
 
-let role_admin = 1;
-let role_student = 2;   
-let role_uinon = 4
-let status_act_accept = 2;
-let status_act_reject = 4;
-let object_create = 1;
 // Create a new Activities
 router.post('/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_add').then((rolePerm) => {
-        if (!req.body.act_name || !req.body.act_address || !req.body.act_time || !req.body.amount  ) {
+        if (!req.body.act_name || !req.body.act_address || !req.body.act_time || !req.body.amount ) {
             res.status(400).send({
                 msg: 'Please pass Activitity name, status , address or creater.'
             })
         } else {
             let status_id = 1;
             admin = false;
-            if (req.user.role_id == role_admin) {  
-                status_id = 2;
+            if (req.user.role_id == variable.role_admin) {  
+                status_id = variable.status_act_accept;
                 admin = true;
                 auth = req.user.id;
+                organization = "Học viện";
             }   
             
             Activity
@@ -47,7 +42,8 @@ router.post('/', passport.authenticate('jwt', {
                     audit_id : admin ? auth : null,
                     act_status: status_id,
                     creater_id : req.user.id,
-                    amount :req.body.amount
+                    amount :req.body.amount,
+                    organization : admin ? organization : req.body.organization
                 })
                 .then((Activity) => res.status(201).send(Activity))
                 .catch((error) => {
@@ -68,7 +64,7 @@ router.get('/activities_accept', passport.authenticate('jwt', {
         Activity
             .findAll({
                 where: {
-                    act_status: 2,
+                    act_status: variable.status_act_accept,
                 }
             })
             .then((Activitys) => res.status(200).send(Activitys))
@@ -139,13 +135,13 @@ router.get('/statistical', passport.authenticate('jwt', {
 router.get('/activities_union_created', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+    helper.checkPermission(req.user.role_id, 'get_all_act_union_created').then((rolePerm) => {
         Activity.findAll({
             include: {
               model: User,
               as : 'creater',
               where: {
-                role_id: role_uinon
+                role_id: variable.role_union
               }
             }
         })
@@ -162,12 +158,14 @@ router.get('/activities_union_created', passport.authenticate('jwt', {
 router.get('/activities_student_created', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+    helper.checkPermission(req.user.role_id, 'get_all_act_student_created').then((rolePerm) => {
         Activity.findAll({
             include: {
               model: User,
               as : 'creater',
-              where: { role_id : role_student}
+              where: {
+                role_id: variable.role_class
+              }
             }
         })
             .then((Activitys) => res.status(200).send(Activitys))
@@ -183,11 +181,11 @@ router.get('/activities_student_created', passport.authenticate('jwt', {
 router.get('/activities_unaccept', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+    helper.checkPermission(req.user.role_id, 'act_get_all_unacp').then((rolePerm) => {
         Activity
             .findAll({
                 where: {
-                    act_status: 1,
+                    act_status: variable.status_act_wait,
                 }
             })
             .then((Activitys) => res.status(200).send(Activitys))
@@ -219,91 +217,14 @@ router.get('/activities_user_created', passport.authenticate('jwt', {
     });
 });
 
-// // Put activity accept
-// router.put('/activities_union_created/:id', passport.authenticate('jwt', {
-//     session: false
-// }), function (req, res) {
-//     const staus_act = req.query.status ? parseInt(req.query.status, 10) : null;
-//     helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
-//             console.log(staus);
-//             Activity
-//                 .findByPk(req.params.id)
-//                 .then(() => {
-//                     Activity.update({
-//                         act_status : staus 
-//                     }, {
-//                         where: {
-//                             id: req.params.id
-//                         }
-//                     }).then(_ => {
-//                         if (staus_act = status_act_accept ) {
-//                             mess = 'Your activity ' + activity.act_name + ' has been accepted';
-//                         } else {
-//                             mess = 'Your activity ' + activity.act_name + ' has been rejected';
-//                         Notification.create({
-//                                 act_id: Activity.id,
-//                                 user_id: Activity.creater_id,
-//                                 object_id: object_create,
-//                                 message: mess
-//                             }).then(() => {
-//                                 res.status(200).send({
-//                                     'message': 'Activity updated and notification created'  
-//                                 });
-//                             }).catch(err => res.status(400).send(err));
-
-//                         res.status(200).send({
-//                             'message': 'Activity updated'
-//                         });
-//                 }}).catch(err => res.status(400).send(err));
-//                 })
-//                 .catch((error) => {
-//                     res.status(400).send(error);
-//                 });
-//     }).catch((error) => {
-//         res.status(403).send(error);
-//     })
-
-// });
-
-// router.put('/activities_union_created/:id', passport.authenticate('jwt', {
-//     session: false
-// }), function (req, res) {
-//     const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
-
-//     helper.checkPermission(req.user.role_id, 'act_update').then(() => {
-//         Activity.findByPk(req.params.id).then((activity) => {
-//             if (!activity) {
-//                 return res.status(404).send({ message: 'Activity not found' });
-//             }
-
-//             activity.update({ act_status: status_act }).then(() => {
-//                 let mess;
-//                 if (status_act === STATUS_ACT_ACCEPT) {
-//                     mess = `Your activity ${activity.act_name} has been accepted`;
-//                 } else {
-//                     mess = `Your activity ${activity.act_name} has been rejected`;
-//                 }
-
-//                 Notification.create({
-//                     act_id: activity.id,
-//                     user_id: activity.creater_id,
-//                     object_id: activity.id, // Assuming object_id is the activity id
-//                     message: mess
-//                 }).then(() => {
-//                     res.status(200).send({ message: 'Activity updated and notification created' });
-//                 }).catch(err => res.status(400).send(err));
-//             }).catch(err => res.status(400).send(err));
-//         }).catch(err => res.status(400).send(err));
-//     }).catch(err => res.status(403).send(err));
-// });
-
+// Update a Activity by ID by university union created
 router.put('/activities_union_created/:id', passport.authenticate('jwt', {
     session: false
 }), async function (req, res) {
     const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
 
     try {
-        await helper.checkPermission(req.user.role_id, 'act_update');
+        await helper.checkPermission(req.user.role_id, 'act_union_accecpt_update');
 
         const activity = await Activity.findByPk(req.params.id);
         if (!activity) {
@@ -313,15 +234,15 @@ router.put('/activities_union_created/:id', passport.authenticate('jwt', {
         await activity.update({ act_status: status_act,
             audit_id: req.user.id 
         });
-        if (status_act === status_act_accept) {
+        if (status_act === variable.status_act_accept ) {
             mess = `Hoạt động của bạn `  + activity.act_name + ` đã được duyệt tổ chức`;
-        } else if (status_act === status_act_reject) {
+        } else if (status_act === variable.status_act_reject) {
             mess = `Hoạt động của bạn `  + activity.act_name + ` đã không được duyệt tổ chức`;}
 
                 await Notification.create({
                     act_id: activity.id,
                     user_id: activity.creater_id,
-                    object_id: object_create, // Assuming object_id is the activity id
+                    object_id: variable.object_create,
                     message: mess
                 });
 
@@ -337,6 +258,92 @@ router.put('/activities_union_created/:id', passport.authenticate('jwt', {
     }
 });
 
+// Update a Activity by ID by student class  created
+router.put('/activities_student_created/:id', passport.authenticate('jwt', {
+    session: false
+}), async function (req, res) {
+    const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
+
+    try {
+        await helper.checkPermission(req.user.role_id, 'act_student_accecpt_update');
+
+        const activity = await Activity.findByPk(req.params.id);
+        if (!activity) {
+            return res.status(404).send({ message: 'Activity not found' });
+        }
+
+        await activity.update({ act_status: status_act,
+            audit_id: req.user.id 
+        });
+        if (status_act === variable.status_act_accept ) {
+            mess = `Hoạt động của bạn `  + activity.act_name + ` đã được duyệt tổ chức`;
+        } else if (status_act === variable.status_act_reject ) {
+            mess = `Hoạt động của bạn `  + activity.act_name + ` đã không được duyệt tổ chức`;}
+
+                await Notification.create({
+                    act_id: activity.id,
+                    user_id: activity.creater_id,
+                    object_id: variable.object_create,
+                    message: mess
+                });
+
+        res.status(200).send({ message: 'Activity updated and notification created' });
+    } catch (err) {
+        if (err.message === 'Permission denied') {
+            res.status(403).send({ message: 'Permission denied', error: err });
+        } else if (err.message === 'Activity not found') {
+            res.status(404).send({ message: 'Activity not found', error: err });
+        } else {
+            res.status(400).send({ message: 'An error occurred', error: err });
+        }
+    }
+});
+
+// Get List of Activities created student join
+router.get('/activities_student_joined', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'get_list_act_stu_join').then((rolePerm) => {
+        Activity.findAll({
+            include : {
+                model : Register_Act,
+                as : "register",
+                where : {
+                    act_account : req.user.id
+                }
+            }
+        })
+            .then((Activity) => res.status(200).send(Activity))
+            .catch((error) => {
+                res.status(400).send(error);
+            });
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
+
+// Get List of Activities created student join
+router.get('/activities_student_joined/:id', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'get_list_act_stu_join_s').then((rolePerm) => {
+        Activity.findAll({
+            include : {
+                model : Register_Act,
+                as : "register",
+                where : {
+                    act_account : req.params.id
+                }
+            }
+        })
+            .then((Activity) => res.status(200).send(Activity))
+            .catch((error) => {
+                res.status(400).send(error);
+            });
+    }).catch((error) => {
+        res.status(403).send(error);
+    });
+});
 
 // Get List of Activities
 router.get('/', passport.authenticate('jwt', {
@@ -375,22 +382,21 @@ router.put('/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
-        if (!req.body.prod_name || !req.body.prod_description || !req.body.prod_image || !req.body.prod_price) {
-            res.status(400).send({
-                msg: 'Please pass Activity name, description, image or price.'
-            })
-        } else {
+
             Activity
                 .findByPk(req.params.id)
                 .then((Activity) => {
                     Activity.update({
-                        prod_name: req.body.prod_name || user.prod_name,
-                        prod_description: req.body.prod_description || user.prod_description,
-                        prod_image: req.body.prod_image || user.prod_image,
-                        prod_price: req.body.prod_price || user.prod_price
+                        act_name: req.body.act_name || Activity.act_name,
+                        act_description: req.body.act_name || Activity.act_name,
+                        act_address: req.body.act_address || Activity.act_address,
+                        act_price: req.body.act_price || Activity.act_price,
+                        act_time: req.body.act_time || Activity.act_time,
+                        amount: req.body.amount || Activity.amount
                     }, {
                         where: {
-                            id: req.params.id
+                            id: req.params.id,
+                            creater_id :req.user.id
                         }
                     }).then(_ => {
                         res.status(200).send({
@@ -402,7 +408,7 @@ router.put('/:id', passport.authenticate('jwt', {
                     res.status(400).send(error);
                 });
         }
-    }).catch((error) => {
+    ).catch((error) => {
         res.status(403).send(error);
     });
 });

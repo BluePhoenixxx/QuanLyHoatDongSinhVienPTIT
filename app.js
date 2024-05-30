@@ -13,6 +13,9 @@ var activitiesRouter = require('./routes/activities');
 const { register } = require('module');
 var registerActivityRouter = require('./routes/register_acts');
 var app = express();
+const cron = require('node-cron');
+const updateActivityStatus = require('./utils/updateStatus');
+
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -31,6 +34,15 @@ app.use('/api/v1/roles', rolesRouter);
 app.use('/api/v1/permissions', permsRouter);
 app.use('/api/v1/activities', activitiesRouter);
 app.use('/api/v1/register_activities', registerActivityRouter);
+
+// Thiết lập cron job để chạy vào lúc 00:00 mỗi ngày
+cron.schedule('0 0 * * *', () => {
+  console.log('Running cron job to update activity status');
+  updateActivityStatus();
+});
+
+
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

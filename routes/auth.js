@@ -6,7 +6,8 @@ const bcrypt = require('bcrypt');
 require('../config/passport')(passport);
 const User = require('../models').User;
 const Role = require('../models').Role;
-    
+const variable = require('../utils/variable.js');
+
 // router.post('/signup', function (req, res) {
 //     if (!req.body.email || !req.body.password || !req.body.fullname) {
 //         res.status(400).send({
@@ -53,15 +54,18 @@ router.post('/login', async function (req, res) {
             });
         }
         
-        // Kiểm tra mật khẩu bằng bcrypt
+        // Check password with bcrypt
         bcrypt.compare(req.body.password, user.password, function (err, isMatch) {
             if (isMatch && !err) {
-                var token = jwt.sign(JSON.parse(JSON.stringify(user)), 'nodeauthsecret', {
+                // create payload don't include password
+                const userWithoutPassword = { ...user.dataValues };
+                delete userWithoutPassword.password;
+
+                var token = jwt.sign(JSON.parse(JSON.stringify(userWithoutPassword)), variable.secret_key, {
                     expiresIn: 60 * 1200
                 });
-
                 
-                jwt.verify(token, 'nodeauthsecret', function (err, data) {
+                jwt.verify(token, variable.secret_key, function (err, data) {
                     console.log(err, data);
                 })
                 res.json({
