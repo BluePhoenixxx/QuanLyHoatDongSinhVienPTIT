@@ -218,15 +218,15 @@ router.get('/activities_user_created', passport.authenticate('jwt', {
 });
 
 // Update a Activity by ID by university union created
-router.put('/activities_union_created/:id', passport.authenticate('jwt', {
+router.put('/activities_union_created/', passport.authenticate('jwt', {
     session: false
 }), async function (req, res) {
-    const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
+    const status_act = req.body.status ? parseInt(req.body.status, 10) : null;
 
     try {
         await helper.checkPermission(req.user.role_id, 'act_union_accecpt_update');
 
-        const activity = await Activity.findByPk(req.params.id);
+        const activity = await Activity.findByPk(req.body.id);
         if (!activity) {
             return res.status(404).send({ message: 'Activity not found' });
         }
@@ -259,15 +259,15 @@ router.put('/activities_union_created/:id', passport.authenticate('jwt', {
 });
 
 // Update a Activity by ID by student class  created
-router.put('/activities_student_created/:id', passport.authenticate('jwt', {
+router.put('/activities_student_created/', passport.authenticate('jwt', {
     session: false
 }), async function (req, res) {
-    const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
+    const status_act = req.body.status ? parseInt(req.body.status, 10) : null;
 
     try {
         await helper.checkPermission(req.user.role_id, 'act_student_accecpt_update');
 
-        const activity = await Activity.findByPk(req.params.id);
+        const activity = await Activity.findByPk(req.body.id);
         if (!activity) {
             return res.status(404).send({ message: 'Activity not found' });
         }
@@ -299,7 +299,7 @@ router.put('/activities_student_created/:id', passport.authenticate('jwt', {
     }
 });
 
-// Get List of Activities created student join
+// Get List of Activities created student join login
 router.get('/activities_student_joined', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {

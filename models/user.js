@@ -23,7 +23,10 @@ module.exports = (sequelize, DataTypes) => {
     username: DataTypes.STRING,
     role_id: DataTypes.INTEGER,
     password: DataTypes.STRING,
-    status_id: DataTypes.STRING
+    status_id: DataTypes.STRING,
+    otp : DataTypes.STRING,
+    otpExpires: DataTypes.DATE
+
   }, {
     sequelize,
     modelName: 'User',
@@ -32,7 +35,7 @@ module.exports = (sequelize, DataTypes) => {
 
   User.beforeSave(async (user, options) => {
     if (user.password) {
-      user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(12), null);
+      user.password = bcrypt.hashSync(user.password, bcrypt.genSaltSync(10), null);
     }
   });
 

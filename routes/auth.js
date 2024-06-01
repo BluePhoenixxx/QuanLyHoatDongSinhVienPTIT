@@ -3,11 +3,18 @@ const jwt = require('jsonwebtoken');
 const passport = require('passport');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+require('dotenv').config()
 require('../config/passport')(passport);
 const User = require('../models').User;
+const Student = require('../models').Student;
 const Role = require('../models').Role;
 const variable = require('../utils/variable.js');
-
+const nodemailer = require('nodemailer');
+const { where } = require('sequelize');
+const crypto = require('crypto');
+const { configDotenv } = require('dotenv');
+const Sequelize = require('sequelize');
+const { Op } = require('sequelize');
 // router.post('/signup', function (req, res) {
 //     if (!req.body.email || !req.body.password || !req.body.fullname) {
 //         res.status(400).send({
@@ -85,7 +92,90 @@ router.post('/login', async function (req, res) {
     }
 });
 
+router.post('/forgot-password', async (req, res) => {
+    const user = await User.findOne({
+       include: [
+         {
+           model: Student,
+           as : 'account',
+           where: {
+             email :req.body.email,
+           }
+         }  
+       ]
+    });
+  
+    if (!user) {
+      return res.status(400).send('User with given email does not exist');
+    }
 
+    const otp = crypto.randomBytes(3).toString('hex').toUpperCase(); // OTP 6 ký tự
+    const expires = Date.now() + 120000;
+  
+    user.otp = otp;
+    user.otpExpires = expires;
+    await user.save();
+  
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: 'bienproyt123@gmail.com',
+        pass: 'ymddhgpjbakntizp',
+      },
+    });
+  
+    const mailOptions = {
+      to: req.body.email,
+      from: 'bienproyt123@gmail.com',
+      subject: 'Password Reset OTP QuanLyHoatDongPTIT',
+      text: `Your OTP for password reset is: ${otp}. This OTP is valid for 1 minute.`,
+    };
+  
+    transporter.sendMail(mailOptions, (err, response) => {
+      if (err) {
+        console.error('There was an error: ', err);
+        return res.status(500).send('Error sending email');
+      }
+      res.status(200).send('OTP sent to your email');
+    });
+  });
+  
+// Endpoint đặt lại mật khẩu bằng OTP
+router.post('/reset-password', async (req, res) => {
+    const { email, otp, password } = req.body;
 
+    const user = await User.findOne({
+      inlucde : [
+        {
+          model : Student,
+          as : 'account',
+          where : {
+            email : email
+          }
+        }
+      ],
+      where: {
+          otp: otp,
+          otpExpires: {
+              [Op.gt]: new Date(),
+          }
+      }
+  });
+    
+
+    if (!user) {
+      return res.status(400).send('Invalid OTP or OTP has expired');
+    }
+
+    user.password = password;
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+  
+    res.status(200).send('Password has been reset');
+  });
   
 module.exports = router;

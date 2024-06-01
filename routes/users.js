@@ -234,7 +234,7 @@ router.put('/:id', passport.authenticate('jwt', {
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
     if (req.body.password) {
-      userpass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(12), null);
+      userpass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null);
     }
       User
         .findByPk(req.params.id)
