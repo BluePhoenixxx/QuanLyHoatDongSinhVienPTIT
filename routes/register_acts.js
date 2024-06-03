@@ -7,6 +7,7 @@ const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
 const { where } = require('sequelize');
+const variable = require('../utils/variable');
 const helper = new Helper();
 let object_register = 2;
 let status_act_accept = 2;
@@ -50,13 +51,13 @@ router.get('/', passport.authenticate('jwt', {
 });
 
 // Get register activities by id activity
-router.get('/get_accept_register/:id', passport.authenticate('jwt', {
+router.get('/get_accept_register/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get_accept_register').then((rolePerm) => {
         Register_Act.findAll({
             where: {
-                act_id: req.params.id
+                act_id: req.body.id
             }
         })
             .then((Register_Act) => res.status(200).send(Register_Act))
@@ -67,14 +68,38 @@ router.get('/get_accept_register/:id', passport.authenticate('jwt', {
         res.status(403).send(error);
     });
 });
+    
 
-// Get register activities by id 
-router.get('/:id', passport.authenticate('jwt', {
+// Accecpt all register activities
+router.put('/accept_all/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'act_get').then((rolePerm) => {
+    helper.checkPermission(req.user.role_id, 'accept_all_register').then((rolePerm) => {
         Register_Act
-            .findByPk(req.params.id)
+            .update({status_id: variable.status_act_accept}, {
+                where: {
+                    status_id: variable.status_act_wait,
+                    act_id: req.body.id
+                }
+            })
+            .then((Register_Act) => res.status(200).send("Register Accepted"))
+            .catch((error) => {
+                res.status(400).send(error);
+            });
+    }).catch((error) => {   
+        res.status(403).send(error);
+    });
+}); 
+           
+
+
+// Get register activities by id 
+router.get('/regiset-id', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'get-register-by-id').then((rolePerm) => {
+        Register_Act
+            .findByPk(req.body.id)
             .then((Register_Act) => res.status(200).send(Register_Act))
             .catch((error) => {
                 res.status(400).send(error);
@@ -85,23 +110,22 @@ router.get('/:id', passport.authenticate('jwt', {
 });
 
 // Update a Register by id
-router.put('/:id', passport.authenticate('jwt', {
+router.put('/', passport.authenticate('jwt', {
     session: false
 }), async function (req, res) {
-    const status_act = req.query.status ? parseInt(req.query.status, 10) : null;
+    const status_act = req.body.status ? parseInt(req.body.status, 10) : null;
 
     try {
         await helper.checkPermission(req.user.role_id, 'act_update');
 
-        const register = await Register_Act.findByPk(req.params.id);
+        const register = await Register_Act.findByPk(req.body.id);
         if (!register) {
             return res.status(404).send({ message: 'Register Activity not found' });
         }
 
-        await register.update({ act_status: status_act,
-            audit_id: req.user.id
+        await register.update({ status_id: status_act,
         });
-
+        
         const activity = await Activity.findByPk(register.act_id);
 
 
@@ -131,22 +155,22 @@ router.put('/:id', passport.authenticate('jwt', {
 });
  
 // Delete register
-router.delete('/:id', passport.authenticate('jwt', {
+router.delete('/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
-        if (!req.params.id) {
+    helper.checkPermission(req.user.role_id, 'register_act_delete').then((rolePerm) => {
+        if (!req.body.id) {
             res.status(400).send({
                 msg: 'Please pass Activity ID.'
             })
         } else {
             Register_Act
-                .findByPk(req.params.id)
+                .findByPk(req.body.id)
                 .then((Activity) => {
                     if (Activity) {
                         Activity.destroy({
                             where: {
-                                id: req.params.id
+                                id: req.body.id
                             }
                         }).then(_ => {
                             res.status(200).send({

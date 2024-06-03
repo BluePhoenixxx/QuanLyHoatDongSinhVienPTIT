@@ -14,6 +14,11 @@ const Helper = require('../utils/helper');
 const student = require('../models/student');
 const { sequelize } = require('../models');
 const helper = new Helper();
+const {passwordRegex, phoneRegex, gmailRegex } = require('../config/validateId.js');
+
+const validatePhoneNumber = (phoneNumber) => phoneRegex.test(phoneNumber);
+const validateGmailAddress = (email) => gmailRegex.test(email);
+const validatePassword = (password) => passwordRegex.test(password);
 
 const Sequelize = require('sequelize');
 const { Where } = require('sequelize/lib/utils');
@@ -28,7 +33,13 @@ router.post('/create_student', passport.authenticate('jwt', {
 
     if ( !req.body.password || !req.body.username || !req.body.MSSV || !req.body.first_name || !req.body.last_name || !req.body.phone ||  !req.body.class_id || !req.body.email || !req.body.gender_id || !req.body.birth_date) {
       return res.status(400).send({
-        msg: 'Please pass  username, password, MSSV, first_name, last_name, phone, class_id, mail, gender_id, birth_date'
+        msg: 'Please pass  username, password, MSSV, first_name, last_name, phone, class_id, email, gender_id, birth_date'
+      });
+    }
+    
+    if (!validatePhoneNumber(req.body.phone) || !validateGmailAddress(req.body.email) || !validatePassword(req.body.password)) {
+      return res.status(400).send({
+        msg: 'Please pass validate phone number and email and password'
       });
     }
 
@@ -80,6 +91,10 @@ router.get('/details', passport.authenticate('jwt', {
   if (variable.role_union == req.user.role_id){
     University_Union
     .findOne({
+      include : {
+        model: User,
+        as: 'account'
+      },
       where : {
         account_id : req.user.id
       }
@@ -118,7 +133,11 @@ router.post('/create_union', passport.authenticate('jwt', {
         msg: 'Please pass Role ID, username, password'
       });
     }
-
+    if (!validatePhoneNumber(req.body.phone) || !validateGmailAddress(req.body.email) || !validatePassword(req.body.password)) {
+      return res.status(400).send({
+        msg: 'Please pass validate phone number and email and password'
+      });
+    }
     // Tạo người dùng
     const user = await User.create({
       username: req.body.username,
@@ -136,7 +155,7 @@ router.post('/create_union', passport.authenticate('jwt', {
       last_name: req.body.last_name,
       phone: req.body.phone,
       address: req.body.address,
-      mail: req.body.mail,
+      email: req.body.email,
       position: req.body.position,
       account_id: userId
     }, { transaction: t });
@@ -161,7 +180,12 @@ router.get('/student', passport.authenticate('jwt', {
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'get_all_student').then((rolePerm) => {
     Student
-          .findAll()
+          .findAll({
+            include:{
+              model: User,
+              as: 'account'
+            }
+          })
           .then((perms) => res.status(200).send(perms))
           .catch((error) => {
               res.status(400).send(error);
@@ -198,7 +222,12 @@ router.get('/university_union', passport.authenticate('jwt', {
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'user_get_all').then((rolePerm) => {
     University_Union
-          .findAll()
+          .findAll({
+            include : {
+              model: User,
+              as: 'account'
+            }
+          })
           .then((perms) => res.status(200).send(perms))
           .catch((error) => {
               res.status(400).send(error);
@@ -208,20 +237,59 @@ router.get('/university_union', passport.authenticate('jwt', {
   });
 });
 
-// Get user by ID
-router.get('/:id', passport.authenticate('jwt', {
+// Get user student by ID
+router.get('/student-id/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'user_get').then((rolePerm) => {
-    if (!req.params.id) {
+    if (!req.body.id) {
       res.status(400).send({
         msg: 'Please pass user ID.'
       })};
   }).catch((error) => {
       res.status(403).send(error);
   });
-  User
-      .findByPk(req.params.id)
+  Student
+      .findOne({
+        include : {
+          model: User,
+          as: 'account'
+        }
+      }, {
+        where: {
+          account_id: req.body.id
+        }
+      })
+      .then((roles) => res.status(200).send(roles))
+      .catch((error) => {
+          res.status(400).send(error);
+      });
+});
+
+
+// Get user union by ID
+router.get('/university_union-id/', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'user_get').then((rolePerm) => {
+    if (!req.body.id) {
+      res.status(400).send({
+        msg: 'Please pass user ID.'
+      })};
+  }).catch((error) => {
+      res.status(403).send(error);s
+  });
+  University_Union
+      .findOne({
+        include : {
+          model: User,
+          as: 'account'
+        }
+      }, {
+        where: {
+          account_id: req.body.id
+        }
+      })
       .then((roles) => res.status(200).send(roles))
       .catch((error) => {
           res.status(400).send(error);
@@ -229,15 +297,17 @@ router.get('/:id', passport.authenticate('jwt', {
 });
 
 // // Update a User
-router.put('/:id', passport.authenticate('jwt', {
+router.put('/update/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
     if (req.body.password) {
       userpass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null);
     }
+    const id = req.body.id ? parseInt(req.body.id, 10) : null;
+
       User
-        .findByPk(req.params.id)
+        .findByPk(req.body.id)
         .then((user) => {
           User.update({
             username: req.body.username || user.username,
@@ -246,7 +316,7 @@ router.put('/:id', passport.authenticate('jwt', {
             role_id: req.body.role_id || user.role_id
           }, {
             where: {
-              id: req.params.id
+              id: req.body.id
             }
           }).then(_ => {
             res.status(200).send({
@@ -264,13 +334,29 @@ router.put('/:id', passport.authenticate('jwt', {
 });
 
 // Update a User union
-router.put('/university_union/:id', passport.authenticate('jwt', {
+router.put('/university_union/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'update_details_union').then((rolePerm) => {
+    
 
+    if (req.body.phone) {
+      if (!validatePhoneNumber(req.body.phone)) {
+        return res.status(400).send({
+          msg: 'Please pass validate phone number'
+        });
+      }
+    }
+
+    if (req.body.email) {
+      if (!validateGmailAddress(req.body.email)) {
+        return res.status(400).send({
+          msg: 'Please pass validate email'
+        });
+      }
+    }
     University_Union
-        .findByPk(req.params.id)
+        .findByPk(req.body.id_union)
         .then((union) => {
           University_Union.update({
             first_name: req.body.first_name || union.first_name,
@@ -278,11 +364,11 @@ router.put('/university_union/:id', passport.authenticate('jwt', {
             phone : req.body.phone || union.phone,
             address: req.body.address || union.address,
             position: req.body.position || union.position,
-            mail: req.body.mail || union.mail,
+            email: req.body.email || union.email,
 
           }, {
             where: {
-              id: req.params.id
+              id: req.body.id_union
             }
           }).then(_ => {
             res.status(200).send({
@@ -300,13 +386,29 @@ router.put('/university_union/:id', passport.authenticate('jwt', {
 });
 
 // Update a student
-router.put('/student/:MSSV', passport.authenticate('jwt', {
+router.put('/student/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'update_info_student').then((rolePerm) => {
-    
+    check = req.body.MSSV
+
+    if (req.body.phone) {
+      if (!validatePhoneNumber(req.body.phone)) {
+        return res.status(400).send({
+          msg: 'Please pass validate phone number'
+        });
+      }
+    }
+
+    if (req.body.email) {
+      if (!validateGmailAddress(req.body.email)) {
+        return res.status(400).send({
+          msg: 'Please pass validate email'
+        });
+      }
+    }
     Student
-        .findByPk(req.params.MSSV)
+        .findByPk(req.body.MSSV)
         .then((student) => {
           Student.update({
             first_name: req.body.first_name || student.first_name,
@@ -320,7 +422,7 @@ router.put('/student/:MSSV', passport.authenticate('jwt', {
 
           }, {
             where: {
-              MSSV: req.params.MSSV 
+              MSSV: req.body.MSSV
             }
           }).then(_ => {
             res.status(200).send({
@@ -337,45 +439,46 @@ router.put('/student/:MSSV', passport.authenticate('jwt', {
   });
 });
 
+
 // Delete a User
-router.delete('/:id', passport.authenticate('jwt', {
+router.delete('/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'user_delete').then((rolePerm) => {
-    if (!req.params.id) {
+    if (!req.body.id) {
       res.status(400).send({
         msg: 'Please pass user ID.'
       })
     } else {
       User
-        .findByPk(req.params.id)
+        .findByPk(req.body.id)
         .then((user) => {
           if (user) {
             // Delete user
             if (user.role_id == variable.role_union) {
               University_Union.destroy({
                 where: {
-                  account_id: req.params.id
+                  account_id: req.body.id
                 }
               });
             } else{
               Student.destroy({
                 where: {
-                  account_id: req.params.id
+                  account_id: req.body.id
                 }
               });
             }
 
             Notification.destroy({
               where:{
-                user_id : req.params.id
+                user_id : req.body.id
               }
             })
             
 
             User.destroy({
               where: {
-                id: req.params.id
+                id: req.body.id
               }
             }).then(_ => {
               res.status(200).send({
@@ -397,4 +500,23 @@ router.delete('/:id', passport.authenticate('jwt', {
   });
 });
 
+
+router.get('/notifications', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'get_all_notification').then((rolePerm) => {
+    Notification
+          .findAll({
+            where: {
+              user_id: req.user.id
+            }
+          })
+          .then((perms) => res.status(200).send(perms))
+          .catch((error) => {
+              res.status(400).send(error);
+          });
+  }).catch((error) => {
+      res.status(403).send(error);
+  });
+}); 
 module.exports = router;

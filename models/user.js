@@ -17,6 +17,7 @@ module.exports = (sequelize, DataTypes) => {
       User.belongsTo(models.Status_Account, {foreignKey: 'status_id', as: 'status'});
       User.hasMany(models.Activity, { foreignKey: 'creater_id', as: 'activities', onDelete: 'CASCADE'});
       User.hasOne(models.Student, {foreignKey :'account_id', as : 'account', onDelete : 'CASCADE'})
+
     }
   }
   User.init({
