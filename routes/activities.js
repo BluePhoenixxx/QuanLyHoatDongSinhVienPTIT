@@ -3,6 +3,8 @@ const router = express.Router();
 const Activity = require('../models').Activity;
 const Register_Act = require('../models').Register_Act;
 const User = require('../models').User;
+const Student  = require('../models').Student;
+const Class = require('../models').Class;
 const Notification = require('../models').Notification;
 const Sequelize = require('sequelize');
 const passport = require('passport');
@@ -406,29 +408,33 @@ router.get('/activities_student_unjoined', passport.authenticate('jwt', {
     });
 });
 
+router.get('/activities_class', passport.authenticate('jwt', { session: false }), async function (req, res) {
+    try {
+        const rolePerm = await helper.checkPermission(req.user.role_id, 'get_list_act_class');
 
-// Get List of Activities created student join
-router.get('/activities_student_joined-id/', passport.authenticate('jwt', {
-    session: false
-}), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'get_list_act_stu_join_s').then((rolePerm) => {
-        Activity.findAll({
-            include : {
-                model : Register_Act,
-                as : "register",
-                where : {
-                    act_account : req.body.id
-                }
+        const students = await Student.findAll({
+            where: {
+                class_id: req.body.class_id
             }
-        })
-            .then((Activity) => res.status(200).send(Activity))
-            .catch((error) => {
-                res.status(400).send(error);
-            });
-    }).catch((error) => {
+        });
+
+        for (let i = 0; i < students.length; i++) {
+            students[i].custom_info = "Your custom info here"; // Thêm thông tin mong muốn vào mỗi sinh viên
+        }
+
+        const activities = await Register_Act.findAll({
+            where: {
+                act_account: students.map(student => student.account_id),
+            }
+        });
+
+        res.status(200).send(students);
+    } catch (error) {
         res.status(403).send(error);
-    });
+    }
 });
+
+
 
 // Get List of Activities
 router.get('/', passport.authenticate('jwt', {
@@ -501,7 +507,7 @@ router.put('/update-act/', passport.authenticate('jwt', {
 });
 
 // Delete a Activitity
-router.delete('/', passport.authenticate('jwt', {
+router.delete('/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
@@ -513,19 +519,19 @@ router.delete('/', passport.authenticate('jwt', {
         // const act = Activity.findByPk(req.body.id);
         } else {
             Activity
-                .findByPk(req.body.id)
+                .findByPk(req.params.id)
                 .then((Activity) => {
                     if ((req.user.role_id == variable.role_admin || Activity.creater_id == req.user.id) && Activity) {
 
                         Register_Act.destroy({
                             where: {
-                                act_id: req.body.id
+                                act_id: req.params.id
                             }
                         });
 
                         Activity.destroy({
                             where: {
-                                id: req.body.id
+                                id: req.params.id
                             }
                         }).then(_ => {
                             res.status(200).send({

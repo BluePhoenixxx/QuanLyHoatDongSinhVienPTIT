@@ -441,44 +441,44 @@ router.put('/student/', passport.authenticate('jwt', {
 
 
 // Delete a User
-router.delete('/', passport.authenticate('jwt', {
+router.delete('/:id', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'user_delete').then((rolePerm) => {
-    if (!req.body.id) {
+    if (!req.params.id) {
       res.status(400).send({
         msg: 'Please pass user ID.'
       })
     } else {
       User
-        .findByPk(req.body.id)
+        .findByPk(req.params.id)
         .then((user) => {
           if (user) {
             // Delete user
             if (user.role_id == variable.role_union) {
               University_Union.destroy({
                 where: {
-                  account_id: req.body.id
+                  account_id: req.params.id
                 }
               });
             } else{
               Student.destroy({
                 where: {
-                  account_id: req.body.id
+                  account_id: req.params.id
                 }
               });
             }
 
             Notification.destroy({
               where:{
-                user_id : req.body.id
+                user_id : req.params.id
               }
             })
             
 
             User.destroy({
               where: {
-                id: req.body.id
+                id: req.params.id
               }
             }).then(_ => {
               res.status(200).send({
