@@ -511,7 +511,7 @@ router.delete('/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
-        if (!req.body.id) {
+        if (!req.params.id) {
             res.status(400).send({
                 msg: 'Please pass Activity ID.'
             })
