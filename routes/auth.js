@@ -60,9 +60,16 @@ router.post('/login', async function (req, res) {
                 message: 'Authentication failed. Username or password is incorrect.',
             });
         }
-        
+
+        if (user.status_id != 1) {
+            return res.status(401).send({
+                success: false,
+                message: 'Authentication failed. User is not active.',
+            });
+        }
         // Check password with bcrypt
         bcrypt.compare(req.body.password, user.password, function (err, isMatch) {
+
             if (isMatch && !err) {
                 // create payload don't include password
                 const userWithoutPassword = { ...user.dataValues };

@@ -301,37 +301,72 @@ router.put('/update/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'role_update').then((rolePerm) => {
-    if (req.body.password) {
-      userpass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null);
-    }
-    const id = req.body.id ? parseInt(req.body.id, 10) : null;
-
+    // if (req.body.password) {
+    //   userpass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null);
+    // }
       User
         .findByPk(req.body.id)
-        .then((user) => {
+        .then((User) => { 
+          console.log(User)
           User.update({
-            username: req.body.username || user.username,
-            password: userpass || user.password,
-            status_id: req.body.status_id || user.status_id,
-            role_id: req.body.role_id || user.role_id
-          }, {
-            where: {
-              id: req.body.id
-            }
+            username: req.body.username || User.username,
+            password: req.body.password || User.password,
+            status_id: req.body.status_id || User.status_id,
+            role_id: req.body.role_id|| User.role_id
           }).then(_ => {
             res.status(200).send({
               'message': 'User updated'
             });
-          }).catch(err => res.status(400).send(err));
+          }).catch(err => res.status(401).send(err));
         })
         .catch((error) => {
-          res.status(400).send(error);
+          res.status(400).send("Không tìm thấy ");
         });
     }
   ).catch((error) => {
     res.status(403).send(error);
   });
 });
+
+
+router.put('/update-act/', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
+
+          Activity
+              .findByPk(req.body.id)
+              .then((Activity) => {
+                  Activity.update({
+                      act_name: req.body.act_name || Activity.act_name,
+                      act_description: req.body.act_name || Activity.act_name,
+                      act_address: req.body.act_address || Activity.act_address,
+                      act_price: req.body.act_price || Activity.act_price,
+                      act_time: req.body.act_time || Activity.act_time,
+                      amount: req.body.amount || Activity.amount,
+                      organization: req.body.organization || Activity.organization
+
+                  }, {
+                      where: {
+                          id: req.body.id,
+                          creater_id :req.user.id
+                      }
+                  }).then(_ => {
+                      res.status(200).send({
+                          'message': 'Activity updated'
+                      });
+                  }).catch(err => res.status(400).send(err));
+              })
+              .catch((error) => {
+                  res.status(400).send(error);
+              });
+      }
+  ).catch((error) => {
+      res.status(403).send(error);
+  });
+});
+
+
 
 // Update a User union
 router.put('/university_union/', passport.authenticate('jwt', {
