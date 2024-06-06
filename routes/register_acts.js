@@ -3,6 +3,7 @@ const router = express.Router();
 const Activity = require('../models').Activity;
 const Register_Act = require('../models').Register_Act;
 const Notification = require('../models').Notification;
+
 const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
@@ -155,22 +156,22 @@ router.put('/', passport.authenticate('jwt', {
 });
  
 // Delete register
-router.delete('/', passport.authenticate('jwt', {
+router.delete('/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'register_act_delete').then((rolePerm) => {
-        if (!req.body.id) {
+        if (!req.params.id) {
             res.status(400).send({
                 msg: 'Please pass Activity ID.'
             })
         } else {
             Register_Act
-                .findByPk(req.body.id)
+                .findByPk(req.params.id)
                 .then((Activity) => {
                     if (Activity) {
                         Activity.destroy({
                             where: {
-                                id: req.body.id
+                                id: req.params.id
                             }
                         }).then(_ => {
                             res.status(200).send({
