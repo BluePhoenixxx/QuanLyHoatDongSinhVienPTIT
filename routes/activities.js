@@ -408,31 +408,51 @@ router.get('/activities_student_unjoined', passport.authenticate('jwt', {
     });
 });
 
-router.get('/activities_class', passport.authenticate('jwt', { session: false }), async function (req, res) {
-    try {
-        const rolePerm = await helper.checkPermission(req.user.role_id, 'get_list_act_class');
-
+router.get('/activities_class/', passport.authenticate('jwt', {
+    session: false
+}), function (req, res) {
+    helper.checkPermission(req.user.role_id, 'get_list_act_class').then(async (rolePerm) => {
         const students = await Student.findAll({
-            where: {
-                class_id: req.body.class_id
-            }
-        });
+            attributes: [
+                'MSSV',
+                'first_name',
+                'last_name',
+                'email',
+                'phone',
 
-        for (let i = 0; i < students.length; i++) {
-            students[i].custom_info = "Your custom info here"; // Thêm thông tin mong muốn vào mỗi sinh viên
-        }
-
-        const activities = await Register_Act.findAll({
-            where: {
-                act_account: students.map(student => student.account_id),
-            }
-        });
-
-        res.status(200).send(students);
-    } catch (error) {
+            ],
+            include: [
+            //   {
+            //     model: Register_Act,
+            //     as: 'register',
+            //     // where: { status_id: variable.status_act_accept },
+            //     attributes : [
+            //         // [sequelize.fn('COUNT', sequelize.col('id')), 'n_id']
+            //     ]
+            //   },
+              {
+                model: User,
+                as: 'account',
+              }
+            ],
+            where: { class_id: req.body.classId },
+            group: ['Student.MSSV']
+          })
+        const updatedStudents = await Promise.all(students.map(async student => {
+                const count = await Register_Act.count({
+                    where: { act_account: student.account.id }
+                });
+                return { ...student.dataValues, count_register: count };
+            }));
+            
+            // updatedStudents is now an array of student objects with the 'n_id' field added
+            res.status(200).send(updatedStudents);
+        
+    }).catch((error) => {
         res.status(403).send(error);
-    }
+    });
 });
+
 
 
 
@@ -473,7 +493,6 @@ router.put('/update-act/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
-
             Activity
                 .findByPk(req.body.id)
                 .then((Activity) => {
@@ -511,7 +530,7 @@ router.delete('/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_delete').then((rolePerm) => {
-        if (!req.params.id) {
+            if (!req.params.id) {
             res.status(400).send({
                 msg: 'Please pass Activity ID.'
             })
@@ -528,7 +547,6 @@ router.delete('/:id', passport.authenticate('jwt', {
                                 act_id: req.params.id
                             }
                         });
-
                         Activity.destroy({
                             where: {
                                 id: req.params.id
