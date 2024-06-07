@@ -36,7 +36,7 @@ app.use('/api/v1/activities', activitiesRouter);
 app.use('/api/v1/register_activities', registerActivityRouter);
 
 // Thiết lập cron job để chạy vào lúc 00:00 mỗi ngày
-cron.schedule('0 0 * * *', () => {
+cron.schedule('00 0 * * *', () => {
   console.log('Running cron job to update activity status');
   updateActivityStatus();
 });
@@ -47,6 +47,7 @@ cron.schedule('0 0 * * *', () => {
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   next(createError(404));
+  
 });
 
 // error handler

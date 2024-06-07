@@ -254,8 +254,7 @@ router.get('/student-id/', passport.authenticate('jwt', {
         include : {
           model: User,
           as: 'account'
-        }
-      }, {
+        },
         where: {
           account_id: req.body.id
         }
@@ -536,6 +535,9 @@ router.delete('/:id', passport.authenticate('jwt', {
 });
 
 
+
+
+
 router.get('/notifications', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
@@ -554,4 +556,7 @@ router.get('/notifications', passport.authenticate('jwt', {
       res.status(403).send(error);
   });
 }); 
+
+
+
 module.exports = router;
