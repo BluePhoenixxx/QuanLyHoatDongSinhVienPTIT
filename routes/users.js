@@ -24,7 +24,7 @@ router.post('/create_student', passport.authenticate('jwt', {
   const t = await sequelize.transaction(); 
   try {
 
-    const rolePerm = await helper.checkPermission(req.user.role_id, 'user_add');
+    const rolePerm = await helper.checkPermission(req.user.role_id, 'user_add_student');
 
     if ( !req.body.password || !req.body.username || !req.body.MSSV || !req.body.first_name || !req.body.last_name || !req.body.phone ||  !req.body.class_id || !req.body.email || !req.body.gender_id || !req.body.birth_date) {
       return res.status(400).send({
@@ -232,11 +232,11 @@ router.get('/university_union', passport.authenticate('jwt', {
 });
 
 // Get user student by ID
-router.get('/student-id/', passport.authenticate('jwt', {
+router.get('/student-id/:id', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'user_get').then((rolePerm) => {
-    if (!req.body.id) {
+    if (!req.params.id) {
       res.status(400).send({
         msg: 'Please pass user ID.'
       })};
@@ -250,7 +250,7 @@ router.get('/student-id/', passport.authenticate('jwt', {
           as: 'account'
         },
         where: {
-          account_id: req.body.id
+          account_id: req.params.id
         }
       })
       .then((roles) => res.status(200).send(roles))
@@ -260,11 +260,11 @@ router.get('/student-id/', passport.authenticate('jwt', {
 });
 
 // Get user union by ID
-router.get('/university_union-id/', passport.authenticate('jwt', {
+router.get('/university_union-id/:id', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'user_get').then((rolePerm) => {
-    if (!req.body.id) {
+    if (!req.params.id) {
       res.status(400).send({
         msg: 'Please pass user ID.'
       })};
@@ -279,7 +279,7 @@ router.get('/university_union-id/', passport.authenticate('jwt', {
         }
       }, {
         where: {
-          account_id: req.body.id
+          account_id: req.params.id
         }
       })
       .then((roles) => res.status(200).send(roles))
@@ -524,7 +524,6 @@ router.delete('/:id', passport.authenticate('jwt', {
   });
 });
 
-
 // Get all notification of user
 router.get('/notifications', passport.authenticate('jwt', {
   session: false
@@ -544,6 +543,7 @@ router.get('/notifications', passport.authenticate('jwt', {
       res.status(403).send(error);
   });
 }); 
+
 
 
 

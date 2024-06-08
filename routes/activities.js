@@ -407,7 +407,7 @@ router.get('/activities_student_unjoined', passport.authenticate('jwt', {
 });
 
 // Get list activites of class
-router.get('/activities_class/', passport.authenticate('jwt', {
+router.get('/activities_class/:classId', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get_list_act_class').then(async (rolePerm) => {
@@ -426,7 +426,7 @@ router.get('/activities_class/', passport.authenticate('jwt', {
                 as: 'account',
               }
             ],
-            where: { class_id: req.body.classId },
+            where: { class_id: req.params.classId },
             group: ['Student.MSSV']
           })
         const updatedStudents = await Promise.all(students.map(async student => {

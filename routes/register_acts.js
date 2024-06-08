@@ -73,7 +73,7 @@ router.get('/get_accept_register/', passport.authenticate('jwt', {
 });
     
 // Accecpt all register activities
-router.put('/accept_all/', passport.authenticate('jwt', {
+router.put('/accept_all/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'accept_all_register').then((rolePerm) => {
@@ -81,7 +81,7 @@ router.put('/accept_all/', passport.authenticate('jwt', {
             .update({status_id: variable.status_act_accept}, {
                 where: {
                     status_id: variable.status_act_wait,
-                    act_id: req.body.id
+                    act_id: req.params.id
                 }
             })
             .then((Register_Act) => res.status(200).send("Register Accepted"))
