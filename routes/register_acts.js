@@ -60,7 +60,7 @@ router.get('/get_accept_register/', passport.authenticate('jwt', {
                 attributes: ['username']
             },
             where: {
-                act_id: req.body.id
+                act_id: req.params.id
             }
         })
             .then((Register_Act) => res.status(200).send(Register_Act))
@@ -94,12 +94,12 @@ router.put('/accept_all/', passport.authenticate('jwt', {
 }); 
            
 // Get register activities by id 
-router.get('/regiset-id', passport.authenticate('jwt', {    
+router.get('/regiset-id/:id', passport.authenticate('jwt', {    
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get-register-by-id').then((rolePerm) => {
         Register_Act
-            .findByPk(req.body.id)
+            .findByPk(req.params.id)
             .then((Register_Act) => res.status(200).send(Register_Act))
             .catch((error) => {
                 res.status(400).send(error);
