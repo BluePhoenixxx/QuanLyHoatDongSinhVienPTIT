@@ -45,7 +45,7 @@ router.get('/', passport.authenticate('jwt', {
 });
 
 // Get register activities by id activity
-router.get('/get_accept_register/', passport.authenticate('jwt', {
+router.get('/get_accept_register/:id', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get_accept_register').then((rolePerm) => {
@@ -84,7 +84,18 @@ router.put('/accept_all/:id', passport.authenticate('jwt', {
                     act_id: req.params.id
                 }
             })
-            .then((Register_Act) => res.status(200).send("Register Accepted"))
+            .then((Register_Act) => 
+                {
+                    // Send notification
+                    Notification
+                        .create({
+                            noti_account: req.user.id,
+                            noti_act: req.params.id,
+                            noti_type: variable.noti_type_register_act,
+                            noti_status: variable.status_active
+                        })
+                    res.status(200).send("Register Accepted")
+                })
             .catch((error) => {
                 res.status(400).send(error);
             });
