@@ -3,13 +3,10 @@ const {
   Model,
   DATE
 } = require('sequelize');
+const variable = require('../utils/variable.js');
 module.exports = (sequelize, DataTypes) => {
   class Activity extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+
     static associate(models) {
       Activity.belongsTo(models.User, {foreignKey: 'creater_id', as: 'creater'});
       Activity.belongsTo(models.User, {foreignKey: 'audit_id', as: 'audit'});
@@ -36,12 +33,12 @@ module.exports = (sequelize, DataTypes) => {
   // Định nghĩa hook sau khi cập nhật
   Activity.afterUpdate(async (activity, options) => {
     const changedAttributes = activity.changed();
-    if (changedAttributes.includes('act_status') && activity.act_status === 4) {
+    if (changedAttributes.includes('act_status') && activity.act_status ===  variable.status_act_reject) {
       try {
         await Notification.create({
           user_id: activity.creater_id, 
           act_id: activity.id,
-          object_id: 1,
+          object_id: variable.object_create,
           message: `Hoạt động "${act_name}" của bạn đã bị hủy`
         });
       } catch (error) {

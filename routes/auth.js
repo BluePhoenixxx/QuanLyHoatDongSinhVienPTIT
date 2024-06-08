@@ -5,16 +5,15 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 require('dotenv').config()
 require('../config/passport')(passport);
-const User = require('../models').User;
-const Student = require('../models').Student;
-const Role = require('../models').Role;
+const { User, Student} = require('../models')
 const variable = require('../utils/variable.js');
 const nodemailer = require('nodemailer');
 const { where } = require('sequelize');
 const crypto = require('crypto');
-const { configDotenv } = require('dotenv');
 const Sequelize = require('sequelize');
 const { Op } = require('sequelize');
+
+
 // router.post('/signup', function (req, res) {
 //     if (!req.body.email || !req.body.password || !req.body.fullname) {
 //         res.status(400).send({
@@ -44,6 +43,8 @@ const { Op } = require('sequelize');
 //         });
 //     }
 // });
+
+
 
 // Check login
 router.post('/login', async function (req, res) {
@@ -76,8 +77,8 @@ router.post('/login', async function (req, res) {
                 delete userWithoutPassword.password;
 
                 var token = jwt.sign(JSON.parse(JSON.stringify(userWithoutPassword)), variable.secret_key, {
-                    expiresIn: 60 * 1200
-                });
+                    expiresIn: 60 *  60 * 240 // 240 hours             
+                    });
                 
                 jwt.verify(token, variable.secret_key, function (err, data) {
                     console.log(err, data);
@@ -99,6 +100,7 @@ router.post('/login', async function (req, res) {
     }
 });
 
+// Quên mật khẩu 
 router.post('/forgot-password', async (req, res) => {
     const user = await User.findOne({
        include: [
@@ -150,7 +152,7 @@ router.post('/forgot-password', async (req, res) => {
     });
   });
   
-// Endpoint đặt lại mật khẩu bằng OTP
+// Đặt lại mật khẩu bằng OTP
 router.post('/reset-password', async (req, res) => {
     const { email, otp, password } = req.body;
 

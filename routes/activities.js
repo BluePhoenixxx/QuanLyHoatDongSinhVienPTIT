@@ -1,17 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const Activity = require('../models').Activity;
-const Register_Act = require('../models').Register_Act;
-const User = require('../models').User;
-const Student  = require('../models').Student;
-const Class = require('../models').Class;
-const Notification = require('../models').Notification;
+const { User, Student, Notification, Activity ,Register_Act} = require('../models')
 const Sequelize = require('sequelize');
 const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
 const helper = new Helper();
-const checkPermission2 = require('../utils/checkrole.js');
 const { where } = require('sequelize');
 const variable = require('../utils/variable.js');
 
@@ -25,7 +19,7 @@ router.post('/', passport.authenticate('jwt', {
                 msg: 'Please pass Activitity name, status , address or creater.'
             })
         } else {
-            let status_id = 1;
+            let status_id = variable.status_act_wait;
             admin = false;
             if (req.user.role_id == variable.role_admin) {  
                 status_id = variable.status_act_accept;
@@ -118,11 +112,11 @@ router.get('/statistical', passport.authenticate('jwt', {
         return res.status(400).send({ message: 'Invalid parameters' });
     }
 
-    // Calculate the start and end dates for the given month and year, if provided
+    // Filter time 
     let dateFilter = {};
     if (year !== null && month !== null) {
         const startDate = new Date(year, month, 1);
-        const endDate = new Date(year, month + 1, 0, 23, 59, 59); // Last second of the month
+        const endDate = new Date(year, month + 1, 0, 23, 59, 59); 
         dateFilter = {
             act_time: {
                 [Sequelize.Op.between]: [startDate, endDate]
@@ -137,8 +131,8 @@ router.get('/statistical', passport.authenticate('jwt', {
             }
         };
     }
-
-    helper.checkPermission(req.user.role_id, 'act_get_all_acp').then((rolePerm) => {
+    // check role
+    helper.checkPermission(req.user.role_id, 'statistical').then((rolePerm) => {
         Activity
             .findAll({
                 where: year !== null ? dateFilter : {},
@@ -160,7 +154,7 @@ router.get('/statistical', passport.authenticate('jwt', {
     });
 });
 
-// Get all Activities created by activity union
+// Get all Activities created by activity union waiting
 router.get('/activities_union_created', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
@@ -170,11 +164,12 @@ router.get('/activities_union_created', passport.authenticate('jwt', {
               model: User,
               as : 'creater',
               where: {
-                role_id: variable.role_union
+                role_id: variable.role_union,
+                status_id: variable.status_active
               }
             },
             where : {
-              act_status: 1
+              act_status: variable.status_act_wait
             }
         })
             .then((Activitys) => res.status(200).send(Activitys))
@@ -186,7 +181,7 @@ router.get('/activities_union_created', passport.authenticate('jwt', {
     });
 });
 
-// Get all Activities created by activity student
+// Get all Activities created by activity student waiting
 router.get('/activities_student_created', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
@@ -196,11 +191,12 @@ router.get('/activities_student_created', passport.authenticate('jwt', {
               model: User,
               as : 'creater',
               where: {
-                role_id: variable.role_class
+                role_id: variable.role_class,
+                status_id: variable.status_active
               }
             },
             where: {
-              act_status: 1
+              act_status: variable.status_act_wait
             }
         })
             .then((Activitys) => res.status(200).send(Activitys))
@@ -212,17 +208,18 @@ router.get('/activities_student_created', passport.authenticate('jwt', {
     });
 });
 
-
+// Get all student created accpet
 router.get('/activities_student_created_accept', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'get_all_act_student_created').then((rolePerm) => {
+    helper.checkPermission(req.user.role_id, 'get_all_act_student_created_accept').then((rolePerm) => {
         Activity.findAll({
             include: {
               model: User,
               as : 'creater',
               where: {
-                role_id: variable.role_class
+                role_id: variable.role_class,
+                status_id: variable.status_active
               }
             },
             where: {
@@ -385,6 +382,7 @@ router.get('/activities_student_joined', passport.authenticate('jwt', {
     });
 });
 
+// Get list activities student unjoined 
 router.get('/activities_student_unjoined', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
@@ -408,6 +406,7 @@ router.get('/activities_student_unjoined', passport.authenticate('jwt', {
     });
 });
 
+// Get list activites of class
 router.get('/activities_class/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
@@ -422,14 +421,6 @@ router.get('/activities_class/', passport.authenticate('jwt', {
 
             ],
             include: [
-            //   {
-            //     model: Register_Act,
-            //     as: 'register',
-            //     // where: { status_id: variable.status_act_accept },
-            //     attributes : [
-            //         // [sequelize.fn('COUNT', sequelize.col('id')), 'n_id']
-            //     ]
-            //   },
               {
                 model: User,
                 as: 'account',
@@ -452,9 +443,6 @@ router.get('/activities_class/', passport.authenticate('jwt', {
         res.status(403).send(error);
     });
 });
-
-
-
 
 // Get List of Activities
 router.get('/', passport.authenticate('jwt', {

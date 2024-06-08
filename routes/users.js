@@ -1,17 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models').User;
-const Role = require('../models').Role;
-const Student = require('../models').Student;
 var bcrypt = require('bcryptjs');
-const University_Union = require('../models').University_Union;
-const Notification = require('../models').Notification;
 const passport = require('passport');
-const Activity = require('../models').Activity
+const { User, Student, University_Union, Notification, Activity } = require('../models')
 const variable = require('../utils/variable.js');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
-const student = require('../models/student');
 const { sequelize } = require('../models');
 const helper = new Helper();
 const {passwordRegex, phoneRegex, gmailRegex } = require('../config/validateId.js');
@@ -22,6 +16,7 @@ const validatePassword = (password) => passwordRegex.test(password);
 
 const Sequelize = require('sequelize');
 const { Where } = require('sequelize/lib/utils');
+
 // Create a new User Student
 router.post('/create_student', passport.authenticate('jwt', {
   session: false
@@ -179,14 +174,13 @@ router.get('/student', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'get_all_student').then((rolePerm) => {
-    Student
-          .findAll({
+    Student.findAll({
             include:{
               model: User,
               as: 'account'
             }
           })
-          .then((perms) => res.status(200).send(perms))
+          .then((student) => res.status(200).send(student))
           .catch((error) => {
               res.status(400).send(error);
           });
@@ -228,7 +222,7 @@ router.get('/university_union', passport.authenticate('jwt', {
               as: 'account'
             }
           })
-          .then((perms) => res.status(200).send(perms))
+          .then((users) => res.status(200).send(users))
           .catch((error) => {
               res.status(400).send(error);
           });
@@ -264,7 +258,6 @@ router.get('/student-id/', passport.authenticate('jwt', {
           res.status(400).send(error);
       });
 });
-
 
 // Get user union by ID
 router.get('/university_union-id/', passport.authenticate('jwt', {
@@ -327,7 +320,7 @@ router.put('/update/', passport.authenticate('jwt', {
   });
 });
 
-
+//  Update of user by id act
 router.put('/update-act/', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
@@ -364,8 +357,6 @@ router.put('/update-act/', passport.authenticate('jwt', {
       res.status(403).send(error);
   });
 });
-
-
 
 // Update a User union
 router.put('/university_union/', passport.authenticate('jwt', {
@@ -473,7 +464,6 @@ router.put('/student/', passport.authenticate('jwt', {
   });
 });
 
-
 // Delete a User
 router.delete('/:id', passport.authenticate('jwt', {
   session: false
@@ -535,9 +525,7 @@ router.delete('/:id', passport.authenticate('jwt', {
 });
 
 
-
-
-
+// Get all notification of user
 router.get('/notifications', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {

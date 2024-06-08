@@ -1,19 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const Activity = require('../models').Activity;
-const Register_Act = require('../models').Register_Act;
-const Notification = require('../models').Notification;
-
+const { Notification, Activity ,Register_Act, User} = require('../models')
 const passport = require('passport');
 require('../config/passport')(passport);
 const Helper = require('../utils/helper');
 const { where } = require('sequelize');
 const variable = require('../utils/variable');
 const helper = new Helper();
-let object_register = 2;
-let status_act_accept = 2;
-let status_act_reject = 4;
-// Create a new Activities
 
 // Create register activites
 router.post('/', passport.authenticate('jwt', {
@@ -24,7 +17,7 @@ router.post('/', passport.authenticate('jwt', {
                 .create({
                     act_id :req.body.act_id ,
                     act_account: req.user.id,
-                    status_id: 1,
+                    status_id: variable.status_act_wait,
                 })
                 .then((Activity) => res.status(201).send(Activity))
                 .catch((error) => {
@@ -57,6 +50,15 @@ router.get('/get_accept_register/', passport.authenticate('jwt', {
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get_accept_register').then((rolePerm) => {
         Register_Act.findAll({
+            
+            include : {
+                model : User,
+                as: 'account',
+                where: {
+                    status_id: variable.status_active
+                },
+                attributes: ['username']
+            },
             where: {
                 act_id: req.body.id
             }
@@ -70,7 +72,6 @@ router.get('/get_accept_register/', passport.authenticate('jwt', {
     });
 });
     
-
 // Accecpt all register activities
 router.put('/accept_all/', passport.authenticate('jwt', {
     session: false
@@ -92,10 +93,8 @@ router.put('/accept_all/', passport.authenticate('jwt', {
     });
 }); 
            
-
-
 // Get register activities by id 
-router.get('/regiset-id', passport.authenticate('jwt', {
+router.get('/regiset-id', passport.authenticate('jwt', {    
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get-register-by-id').then((rolePerm) => {
@@ -130,15 +129,15 @@ router.put('/', passport.authenticate('jwt', {
         const activity = await Activity.findByPk(register.act_id);
 
 
-        if (status_act === status_act_accept) {
+        if (status_act === variable.status_act_accept) {
             mess = `Hoạt động bạn đăng ký  `  + activity.act_name + ` đã được duyệt tham gia`;
-        } else if (status_act === status_act_reject) {
+        } else if (status_act === variable.status_act_reject) {
             mess = `Hoạt động bạn đăng ký `  + activity.act_name + ` đã không được duyệt tham gia`;}
 
                 await Notification.create({
                     act_id: activity.id,
                     user_id: register.creater_id,
-                    object_id: object_register, // Assuming object_id is the activity id
+                    object_id: variable.object_student, // Assuming object_id is the activity id
                     user_id: req.user.id,
                     message: mess
                 });
@@ -171,7 +170,8 @@ router.delete('/:id', passport.authenticate('jwt', {
                     if (Activity) {
                         Activity.destroy({
                             where: {
-                                id: req.params.id
+                                id: req.params.id,
+                                act_account: req.user.id
                             }
                         }).then(_ => {
                             res.status(200).send({

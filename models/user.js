@@ -17,6 +17,8 @@ module.exports = (sequelize, DataTypes) => {
       User.belongsTo(models.Status_Account, {foreignKey: 'status_id', as: 'status'});
       User.hasMany(models.Activity, { foreignKey: 'creater_id', as: 'activities', onDelete: 'CASCADE'});
       User.hasOne(models.Student, {foreignKey :'account_id', as : 'account', onDelete : 'CASCADE'})
+      // User.hasMany(models.Notification, {foreignKey :'user_id', as : 'notifications', onDelete : 'CASCADE'})
+      User.hasMany(models.Register_Act,{foreignKey: 'act_id', as: 'register'})
       
     }
   }
