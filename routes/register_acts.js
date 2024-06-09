@@ -50,7 +50,6 @@ router.get('/get_accept_register/:id', passport.authenticate('jwt', {
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get_accept_register').then((rolePerm) => {
         Register_Act.findAll({
-            
             include : {
                 model : User,
                 as: 'account',
@@ -147,9 +146,8 @@ router.put('/', passport.authenticate('jwt', {
 
                 await Notification.create({
                     act_id: activity.id,
-                    user_id: register.creater_id,
+                    user_id: register.act_account,
                     object_id: variable.object_student, // Assuming object_id is the activity id
-                    user_id: req.user.id,
                     message: mess
                 });
 
