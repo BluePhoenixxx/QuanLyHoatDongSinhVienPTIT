@@ -60,7 +60,8 @@ router.get('/get_accept_register/:id', passport.authenticate('jwt', {
             },
             where: {
                 act_id: req.params.id
-            }
+            },
+            order : [['status_id', 'ASC']]
         })
             .then((Register_Act) => res.status(200).send(Register_Act))
             .catch((error) => {

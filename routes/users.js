@@ -526,34 +526,32 @@ router.get('/notifications', passport.authenticate('jwt', {
 router.post('/change-password', passport.authenticate('jwt', {
   session: false
 }), function (req, res) {
-  helper.checkPermission(req.user.role_id, 'change_password').then((rolePerm) => {
+  helper.checkPermission(req.user.role_id, 'change_password').then(async (rolePerm) => {
 
     if (!validatePassword(req.body.password) || !validatePassword(req.body.passwordcheck)) {
       return res.status(400).send({
         msg: 'Please pass validate password'
       });
     }
-    if (req.body.password != req.body.passwordcheck) {
+   if (req.body.password !== req.body.passwordcheck && req.body.passwordcheck == req.body.oldpassword) {
       return res.status(400).send({
-        msg: 'Please pass same password'
+        msg: 'Please pass validate password'
       });
     }
+    
+    const userfind = await User.findOne({
+      where: {
+        id: req.user.id,
+        password: req.body.oldpassword
+      }
+    });
 
-    User
-          .update({
-            password: req.body.password
-          }, {
-            where: {
-              id: req.user.id,
-              
-            }
-          })
-          .then((perms) => res.status(200).send({
-            'message': 'Change password success'
-          }))
-          .catch((error) => {
-              res.status(400).send(error);
-          });
+    userfind.password = req.body.password   ;
+    await userfind.save();
+
+    res.send({
+      'message': 'Password changed'
+    });
   }).catch((error) => {
       res.status(403).send(error);
   });
