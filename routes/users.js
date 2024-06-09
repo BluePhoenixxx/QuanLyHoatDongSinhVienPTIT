@@ -528,25 +528,40 @@ router.post('/change-password', passport.authenticate('jwt', {
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'change_password').then(async (rolePerm) => {
 
-    if (!validatePassword(req.body.password) || !validatePassword(req.body.passwordcheck)) {
+    if (!validatePassword(req.body.newpassword) || !validatePassword(req.body.passwordcheck) || !validatePassword(req.body.oldpassword)) {
       return res.status(400).send({
-        msg: 'Please pass validate password'
+        msg: 'Please pass validate password and old password'
       });
     }
-   if (req.body.password !== req.body.passwordcheck && req.body.passwordcheck == req.body.oldpassword) {
+   if (req.body.newpassword !== req.body.passwordcheck || req.body.passwordcheck == req.body.oldpassword) {
       return res.status(400).send({
-        msg: 'Please pass validate password'
+        msg: 'Please pass not same password'
       });
     }
+ 
+  try {
+    bcrypt.compare(req.body.oldpassword, req.user.password, function (err, isMatch) {
+      
+      if (!isMatch || err) {
+          res.status(401).send({
+          success: false,
+          message: 'Authentication failed. oldpassword is incorrect'
+      });
+      }
+  });
+  } catch (error) {
+    return res.status(400).send(error);
+  } 
+
+   
     
     const userfind = await User.findOne({
       where: {
         id: req.user.id,
-        password: req.body.oldpassword
       }
     });
 
-    userfind.password = req.body.password   ;
+    userfind.password = req.body.newpassword   ;
     await userfind.save();
 
     res.send({
