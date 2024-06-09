@@ -33,8 +33,18 @@ async function updateActivityStatus() {
             act_status: variable.status_act_wait
         }
     });
-    await activitie_oneWeek.forEach(activitity => {
+    await activitie_oneWeek.forEach(async activitity => {
         activitity.update({ act_status: variable.status_act_reject });
+        try {
+            await Notification.create({
+                user_id: activitity.creater_id,
+                act_id: activitity.id,
+                object_id: variable.object_create,
+                message: `Hoạt động "${activitity.act_name}" đã bị hủy vì chưa được duyệt cách 7 ngày trước khi tổ chức`
+            });
+        } catch (error) {
+            console.error('Error creating notification:', error);
+        }    
         
     });
 
@@ -101,90 +111,11 @@ async function updateActivityStatus() {
         }
     }));
 
-    await Promise.all(activities.map(async (activity) => {
-        const count = await Register_Act.count({
-            where: {
-                status_id: variable.status_act_accept,
-                act_id: activity.id
-            }
-        });
+   
 
-        if (count < activity.amount) {
-            // Update the status of the activity to 'rejected'
-            await activity.update({ act_status: variable.status_act_reject });
-
-            // Get the activity name
-            const activityName = activity.act_name;
-
-            try {
-                await Notification.create({
-                    user_id: activity.creater_id,
-                    act_id: activity.id,
-                    object_id: variable.object_create,
-                    message: `Hoạt động "${activityName}" đã bị hủy vì không đạt được số lượng đăng ký đủ`
-                });
-            } catch (error) {
-                console.error('Error creating notification:', error);
-            }    
-        }
-    }));
-
-    await Promise.all(activities.map(async (activity) => {
-        const count = await Register_Act.count({
-            where: {
-                status_id: variable.status_act_accept,
-                act_id: activity.id
-            }
-        });
-
-        if (count < activity.amount) {
-            // Update the status of the activity to 'rejected'
-            await activity.update({ act_status: variable.status_act_reject });
-
-            // Get the activity name
-            const activityName = activity.act_name;
-
-            try {
-                await Notification.create({
-                    user_id: activity.creater_id,
-                    act_id: activity.id,
-                    object_id: variable.object_create,
-                    message: `Hoạt động "${activityName}" đã bị hủy vì không đạt được số lượng đăng ký đủ`
-                });
-            } catch (error) {
-                console.error('Error creating notification:', error);
-            }    
-        }
-    }));
+  
 
 
-    await Promise.all(activities.map(async (activity) => {
-        const count = await Register_Act.count({
-            where: {
-                status_id: variable.status_act_accept,
-                act_id: activity.id
-            }
-        });
-
-        if (count < activity.amount) {
-            // Update the status of the activity to 'rejected'
-            await activity.update({ act_status: variable.status_act_reject });
-
-            // Get the activity name
-            const activityName = activity.act_name;
-
-            try {
-                await Notification.create({
-                    user_id: activity.creater_id,
-                    act_id: activity.id,
-                    object_id: variable.object_create,
-                    message: `Hoạt động "${activityName}" đã bị hủy vì không đạt được số lượng đăng ký đủ`
-                });
-            } catch (error) {
-                console.error('Error creating notification:', error);
-            }    
-        }
-    }));
     
 
 

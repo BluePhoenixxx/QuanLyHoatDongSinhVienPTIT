@@ -8,13 +8,24 @@ const Helper = require('../utils/helper');
 const helper = new Helper();
 const { where } = require('sequelize');
 const variable = require('../utils/variable.js');
+const {dateRegex } = require('../config/validateId.js');
+const isValidDateInRange = dateString => new Date(dateString) >= new Date() && new Date(dateString) <= new Date(new Date().setDate(new Date().getDate() + 7));
+const validateDateRegex = (date) => dateRegex.test(date);
+
 
 // Create a new Activities
 router.post('/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_add').then((rolePerm) => {
-        if (!req.body.act_name || !req.body.act_address || !req.body.act_time || !req.body.amount ) {
+
+        if (!validateDateRegex(req.body.act_time) || isValidDateInRange(req.body.act_time)) {
+                return res.status(400).send({
+                msg: 'Please pass validate date and date more 7 days'
+                });
+            }
+
+        if (!req.body.act_name || !req.body.act_address || !req.body.amount ) {
             res.status(400).send({
                 msg: 'Please pass Activitity name, status , address or creater.'
             })
@@ -477,10 +488,17 @@ router.get('/:id', passport.authenticate('jwt', {
 });
 
 // Update a Activitity
-router.put('/update-act/', passport.authenticate('jwt', {
+router.put('/update-act', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
+        act_time = req.body.act_time;
+
+            if  (req.body.act_time != undefined) {
+                if (!validateDateRegex(act_time) || isValidDateInRange(act_time)) {
+                    return res.status(400).send({ message: 'Invalid date format and date more 7 days' });
+                }
+            }   
             Activity
                 .findByPk(req.body.id)
                 .then((Activity) => {
@@ -530,11 +548,6 @@ router.delete('/:id', passport.authenticate('jwt', {
                 .then((Activity) => {
                     if ((req.user.role_id == variable.role_admin || Activity.creater_id == req.user.id) && Activity) {
 
-                        Register_Act.destroy({
-                            where: {
-                                act_id: req.params.id
-                            }
-                        });
                         Activity.destroy({
                             where: {
                                 id: req.params.id

@@ -321,42 +321,42 @@ router.put('/update/', passport.authenticate('jwt', {
 });
 
 //  Update of user by id act
-router.put('/update-act/', passport.authenticate('jwt', {
-  session: false
-}), function (req, res) {
-  helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
+// router.put('/update-act/', passport.authenticate('jwt', {
+//   session: false
+// }), function (req, res) {
+//   helper.checkPermission(req.user.role_id, 'act_update').then((rolePerm) => {
 
-          Activity
-              .findByPk(req.body.id)
-              .then((Activity) => {
-                  Activity.update({
-                      act_name: req.body.act_name || Activity.act_name,
-                      act_description: req.body.act_name || Activity.act_name,
-                      act_address: req.body.act_address || Activity.act_address,
-                      act_price: req.body.act_price || Activity.act_price,
-                      act_time: req.body.act_time || Activity.act_time,
-                      amount: req.body.amount || Activity.amount,
-                      organization: req.body.organization || Activity.organization
+//           Activity
+//               .findByPk(req.body.id)
+//               .then((Activity) => {
+//                   Activity.update({
+//                       act_name: req.body.act_name || Activity.act_name,
+//                       act_description: req.body.act_name || Activity.act_name,
+//                       act_address: req.body.act_address || Activity.act_address,
+//                       act_price: req.body.act_price || Activity.act_price,
+//                       act_time: req.body.act_time || Activity.act_time,
+//                       amount: req.body.amount || Activity.amount,
+//                       organization: req.body.organization || Activity.organization
 
-                  }, {
-                      where: {
-                          id: req.body.id,
-                          creater_id :req.user.id
-                      }
-                  }).then(_ => {
-                      res.status(200).send({
-                          'message': 'Activity updated'
-                      });
-                  }).catch(err => res.status(400).send(err));
-              })
-              .catch((error) => {
-                  res.status(400).send(error);
-              });
-      }
-  ).catch((error) => {
-      res.status(403).send(error);
-  });
-});
+//                   }, {
+//                       where: {
+//                           id: req.body.id,
+//                           creater_id :req.user.id
+//                       }
+//                   }).then(_ => {
+//                       res.status(200).send({
+//                           'message': 'Activity updated'
+//                       });
+//                   }).catch(err => res.status(400).send(err));
+//               })
+//               .catch((error) => {
+//                   res.status(400).send(error);
+//               });
+//       }
+//   ).catch((error) => {
+//       res.status(403).send(error);
+//   });
+// });
 
 // Update a User union
 router.put('/university_union/', passport.authenticate('jwt', {
@@ -478,27 +478,6 @@ router.delete('/:id', passport.authenticate('jwt', {
         .findByPk(req.params.id)
         .then((user) => {
           if (user) {
-            // Delete user
-            if (user.role_id == variable.role_union) {
-              University_Union.destroy({
-                where: {
-                  account_id: req.params.id
-                }
-              });
-            } else{
-              Student.destroy({
-                where: {
-                  account_id: req.params.id
-                }
-              });
-            }
-
-            Notification.destroy({
-              where:{
-                user_id : req.params.id
-              }
-            })
-            
 
             User.destroy({
               where: {

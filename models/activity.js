@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
       Activity.belongsTo(models.User, {foreignKey: 'creater_id', as: 'creater'});
       Activity.belongsTo(models.User, {foreignKey: 'audit_id', as: 'audit'});
       Activity.belongsTo(models.Status_Act, {foreignKey: 'act_status', as: 'status'})
-      Activity.hasMany(models.Register_Act,{foreignKey: 'act_id', as: 'register'})
+      Activity.hasMany(models.Register_Act,{foreignKey: 'act_id', as: 'register' , onDelete: 'CASCADE' ,hooks: true})
     }
   }
   Activity.init({
