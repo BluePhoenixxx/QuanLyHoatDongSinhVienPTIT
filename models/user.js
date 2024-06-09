@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       User.hasOne(models.Student, {foreignKey :'account_id', as : 'account', onDelete : 'CASCADE' ,hooks: true}) 
       User.hasMany(models.Notification, {foreignKey :'user_id', as : 'notifications', onDelete : 'CASCADE' ,hooks: true})
       User.hasMany(models.Register_Act,{foreignKey: 'act_id', as: 'register', onDelete: 'CASCADE' ,hooks: true})
-      
+      User.hasOne(models.University_Union,{foreignKey: 'account_id', as: 'union', onDelete: 'CASCADE' ,hooks: true})
     }
   }
   User.init({

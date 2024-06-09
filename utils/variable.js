@@ -12,5 +12,5 @@ module.exports = {
     object_student: 2,
     status_active :1,
     status_inactive:2,
-    secret_key  : "nhom2ptithcm"
+    secret_key  : "nhom2ptithcm",
 };

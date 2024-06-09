@@ -5,14 +5,16 @@ const router = express.Router();
 const bcrypt = require('bcrypt');
 require('dotenv').config()
 require('../config/passport')(passport);
-const { User, Student} = require('../models')
+const { User, Student, University_Union} = require('../models')
 const variable = require('../utils/variable.js');
 const nodemailer = require('nodemailer');
 const { where } = require('sequelize');
 const crypto = require('crypto');
 const Sequelize = require('sequelize');
 const { Op } = require('sequelize');
-
+const { log } = require('console');
+require('dotenv').config()
+const env_mail = process.env.ADMIN_EMAIL || 'nguyentranhungbien@gmail.com';
 
 // router.post('/signup', function (req, res) {
 //     if (!req.body.email || !req.body.password || !req.body.fullname) {
@@ -100,9 +102,11 @@ router.post('/login', async function (req, res) {
     }
 });
 
+
+
 // Quên mật khẩu 
 router.post('/forgot-password', async (req, res) => {
-    const user = await User.findOne({
+    const user_student = await User.findOne({
        include: [
          {
            model: Student,
@@ -113,17 +117,48 @@ router.post('/forgot-password', async (req, res) => {
          }  
        ]
     });
-  
-    if (!user) {
+
+    const user_union = await User.findOne({
+      include: [
+        {
+          model: University_Union,
+          as : 'union',
+          where: {
+            email :req.body.email,
+          }
+        }  
+      ]
+   });
+
+    if (!user_student && !user_union && (req.body.email != env_mail)) {
       return res.status(400).send('User with given email does not exist');
     }
-
     const otp = crypto.randomBytes(3).toString('hex').toUpperCase(); // OTP 6 ký tự
     const expires = Date.now() + 120000;
+
+    if (req .body.email == env_mail) {
+      const user_admin = await User.findOne({
+        where: {
+          role_id: variable.role_admin
+        }
+      })
+      user_admin.otp = otp;
+      user_admin.otpExpires = expires;
+      await user_admin.save()
+    }
+
+    if (user_student) {
+     user_student.otp = otp;
+     user_student.otpExpires = expires;
+      await user_student.save()
+    }
+      
   
-    user.otp = otp;
-    user.otpExpires = expires;
-    await user.save();
+    if (user_union) {
+      user_union.otp = otp;
+      user_union.otpExpires = expires;
+      await user_union.save()
+    }
   
     const transporter = nodemailer.createTransport({
       service: 'gmail',
@@ -134,7 +169,7 @@ router.post('/forgot-password', async (req, res) => {
         user: 'bienproyt123@gmail.com',
         pass: 'ymddhgpjbakntizp',
       },
-    });
+    });``
   
     const mailOptions = {
       to: req.body.email,
@@ -160,6 +195,13 @@ router.post('/reset-password', async (req, res) => {
       inlucde : [
         {
           model : Student,
+          as : 'account',
+          where : {
+            email : email
+          }
+        },
+        {
+          model : University_Union,
           as : 'account',
           where : {
             email : email
