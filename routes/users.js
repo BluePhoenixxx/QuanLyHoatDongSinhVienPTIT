@@ -523,7 +523,41 @@ router.get('/notifications', passport.authenticate('jwt', {
   });
 }); 
 
+router.post('/change-password', passport.authenticate('jwt', {
+  session: false
+}), function (req, res) {
+  helper.checkPermission(req.user.role_id, 'change_password').then((rolePerm) => {
 
+    if (!validatePassword(req.body.password) || !validatePassword(req.body.passwordcheck)) {
+      return res.status(400).send({
+        msg: 'Please pass validate password'
+      });
+    }
+    if (req.body.password != req.body.passwordcheck) {
+      return res.status(400).send({
+        msg: 'Please pass same password'
+      });
+    }
+
+    User
+          .update({
+            password: req.body.password
+          }, {
+            where: {
+              id: req.user.id,
+              
+            }
+          })
+          .then((perms) => res.status(200).send({
+            'message': 'Change password success'
+          }))
+          .catch((error) => {
+              res.status(400).send(error);
+          });
+  }).catch((error) => {
+      res.status(403).send(error);
+  });
+});
 
 
 module.exports = router;
