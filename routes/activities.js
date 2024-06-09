@@ -423,14 +423,6 @@ router.get('/activities_class/:classId', passport.authenticate('jwt', {
 }), function (req, res) {
     helper.checkPermission(req.user.role_id, 'get_list_act_class').then(async (rolePerm) => {
         const students = await Student.findAll({
-            attributes: [
-                'MSSV',
-                'first_name',
-                'last_name',
-                'email',
-                'phone',
-
-            ],
             include: [
               {
                 model: User,
