@@ -36,11 +36,6 @@ router.post('/', passport.authenticate('jwt', {
 
 
 // Get List of Roles
-// Get List of Roles
-
-
-
-// Get List of Roles
 router.get('/', passport.authenticate('jwt', {
     session: false
 }), function (req, res) {

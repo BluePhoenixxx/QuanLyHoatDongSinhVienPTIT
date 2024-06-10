@@ -9,7 +9,7 @@ const helper = new Helper();
 const { where } = require('sequelize');
 const variable = require('../utils/variable.js');
 const {dateRegex } = require('../config/validateId.js');
-const isValidDateInRange = dateString => new Date(dateString) >= new Date() && new Date(dateString) <= new Date(new Date().setDate(new Date().getDate() + 7));
+const isValidDateInRange = dateString => new Date(dateString) <= new Date(new Date().setDate(new Date().getDate() + 7));
 const validateDateRegex = (date) => dateRegex.test(date);
 
 
@@ -551,7 +551,7 @@ router.delete('/:id', passport.authenticate('jwt', {
                         }).catch(err => res.status(400).send("Không được xóa hoạt động không phải của bạn"));
                     } else {
                         res.status(404).send({
-                            'message': 'Không được xóa hoạt động không phải của bạn'
+                            'message': 'Activity not found'
                         });
                     }
                 })

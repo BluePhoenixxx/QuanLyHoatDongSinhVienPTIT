@@ -10,10 +10,10 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      Register_Act.belongsTo(models.Activity, {foreignKey: 'act_id', as: 'activity'});
+      Register_Act.belongsTo(models.Activity, {foreignKey: 'act_id', as: 'activity'}, {onDelete: 'CASCADE'} ,{hooks: true});
       Register_Act.belongsTo(models.Status_Act, {foreignKey: 'status_id', as: 'status'});
-      Register_Act.belongsTo(models.User, {foreignKey: 'act_account', as: 'account'});
-      Register_Act.belongsTo(models.Student, {foreignKey: 'act_account', as: 'register'});
+      Register_Act.belongsTo(models.User, {foreignKey: 'act_account', as: 'account'} ,{onDelete: 'CASCADE'} ,{hooks: true});
+      Register_Act.belongsTo(models.Student, {foreignKey: 'act_account', as: 'register'}, {onDelete: 'CASCADE'} ,{hooks: true});
     }
   }
   Register_Act.init({

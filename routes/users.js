@@ -8,70 +8,15 @@ require('../config/passport')(passport);
 const Helper = require('../utils/helper');
 const { sequelize } = require('../models');
 const helper = new Helper();
-const {passwordRegex, phoneRegex, gmailRegex } = require('../config/validateId.js');
-
+const {dateRegex,passwordRegex, phoneRegex, gmailRegex } = require('../config/validateId.js');
 const validatePhoneNumber = (phoneNumber) => phoneRegex.test(phoneNumber);
 const validateGmailAddress = (email) => gmailRegex.test(email);
 const validatePassword = (password) => passwordRegex.test(password);
-
+const validateData = (date) => dateRegex.test(date);
+const isValidDateInRange = dateString => new Date(dateString) <= new Date(new Date().setFullYear(new Date().getFullYear() - 16));
 const Sequelize = require('sequelize');
 const { Where } = require('sequelize/lib/utils');
 
-// Create a new User Student
-router.post('/create_student', passport.authenticate('jwt', {
-  session: false
-}), async function (req, res) {
-  const t = await sequelize.transaction(); 
-  try {
-
-    const rolePerm = await helper.checkPermission(req.user.role_id, 'user_add_student');
-
-    if ( !req.body.password || !req.body.username || !req.body.MSSV || !req.body.first_name || !req.body.last_name || !req.body.phone ||  !req.body.class_id || !req.body.email || !req.body.gender_id || !req.body.birth_date) {
-      return res.status(400).send({
-        msg: 'Please pass  username, password, MSSV, first_name, last_name, phone, class_id, email, gender_id, birth_date'
-      });
-    }
-    
-    if (!validatePhoneNumber(req.body.phone) || !validateGmailAddress(req.body.email) || !validatePassword(req.body.password)) {
-      return res.status(400).send({
-        msg: 'Please pass validate phone number and email and password'
-      });
-    }
-
-    const user = await User.create({
-      username: req.body.username,
-      password: req.body.password,
-      role_id: variable.role_student,
-      status_id: variable.status_active
-    }, { transaction: t });
-
-
-    const userId = user.id;
-
-
-    const student = await Student.create({
-      MSSV: req.body.MSSV,
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      phone: req.body.phone,
-      address: req.body.address,
-      position : req.body.position,
-      class_id: req.body.class_id,
-      email: req.body.email,
-      gender_id: req.body.gender_id,
-      birthday: req.body.birth_date,
-      account_id: userId // Gán user.id cho account_id của sinh viên
-    }, { transaction: t });
-    // Commit transaction nếu không có lỗi xảy ra
-    await t.commit();
-    return res.status(201).send({ user, student });
-  } catch (error) {
-    await t.rollback();
-
-    console.log(error);
-    return res.status(400).send(error);
-  }
-});
 
 // Get details user
 router.get('/details', passport.authenticate('jwt', {
@@ -113,61 +58,83 @@ router.get('/details', passport.authenticate('jwt', {
   
 });
 
-// Create a new User union
-router.post('/create_union', passport.authenticate('jwt', {
-  session: false
-}), async function (req, res) {
-  const t = await sequelize.transaction(); // Bắt đầu một transaction
+// Create a new User Student
+router.post('/create_student', passport.authenticate('jwt', { session: false }), async function (req, res) {
+  const { role_id, password, MSSV,username, phone, email, first_name, last_name, address, position ,status_id, class_id, gender_id, birth_date} = req.body;
 
+  if (!role_id || !password || !username || !validatePhoneNumber(phone) || !validateGmailAddress(email) || !validatePassword(password) || !validateData(birth_date) || !isValidDateInRange(birth_date)) {
+    return res.status(400).send({ msg: 'Please pass valid  username, password, phone number, and email' });
+  }
+
+  const existingUniontMail = await University_Union.findOne({ where: { email: email } } );
+  const existingUniontPhone = await University_Union.findOne({ where: { phone: phone } } );
+  const existingStudentMail = await Student.findOne({ where: { email: email } } );
+  const existingStudentPhone = await Student.findOne({ where: { phone: phone } } );
+    if (existingStudentMail || existingUniontMail) {
+      return res.status(400).send({ msg: 'Email already exists' });
+    }
+
+    if (existingStudentPhone || existingUniontPhone) {
+      return res.status(400).send({ msg: 'Phone already exists' });
+    }
   try {
-    // Kiểm tra quyền hạn của người dùng
+    
+    
+    const rolePerm = await helper.checkPermission(req.user.role_id, 'user_add_student');
+    // Đồng bộ hóa cơ sở dữ liệu
+    await sequelize.sync();
+
+    // Tạo người dùng và sinh viên trong cùng một thời điểm
+    const user = await User.create({ username, password, role_id, status_id});
+    const student = await Student.create({ MSSV,first_name, last_name, phone, address, gender_id, email, position,class_id, birthday : birth_date,account_id: user.id });
+
+    // Trả về kết quả thành công
+    return res.status(201).send({ user, student });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).send(error);
+  }
+});
+
+
+router.post('/create_union', passport.authenticate('jwt', { session: false }), async function (req, res) {
+  const { role_id, password, username, phone, email, first_name, last_name, address, position } = req.body;
+
+  if (!role_id || !password || !username || !validatePhoneNumber(phone) || !validateGmailAddress(email) || !validatePassword(password)) {
+    return res.status(400).send({ msg: 'Please pass valid  username, password, phone number, and email' });
+  }
+  const existingUniontMail = await University_Union.findOne({ where: { email: email } } );
+  const existingUniontPhone = await University_Union.findOne({ where: { phone: phone } } );
+  const existingStudentMail = await Student.findOne({ where: { email: email } } );
+  const existingStudentPhone = await Student.findOne({ where: { phone: phone } } );
+    if (existingStudentMail || existingUniontMail) {
+      return res.status(400).send({ msg: 'Email already exists' });
+    }
+
+    if (existingStudentPhone || existingUniontPhone) {
+      return res.status(400).send({ msg: 'Phone already exists' });
+    }
+  try {
+   
+
     const rolePerm = await helper.checkPermission(req.user.role_id, 'user_add');
+    // Đồng bộ hóa cơ sở dữ liệu
+    await sequelize.sync();
 
-    if (!req.body.role_id || !req.body.password || !req.body.username) {
-      return res.status(400).send({
-        msg: 'Please pass Role ID, username, password'
-      });
-    }
-    if (!validatePhoneNumber(req.body.phone) || !validateGmailAddress(req.body.email) || !validatePassword(req.body.password)) {
-      return res.status(400).send({
-        msg: 'Please pass validate phone number and email and password'
-      });
-    }
-    // Tạo người dùng
-    const user = await User.create({
-      username: req.body.username,
-      password: req.body.password,
-      role_id: req.body.role_id,
-      status_id: req.body.status_id
-    }, { transaction: t });
-
-    // Lấy user.id từ người dùng mới tạo
-    const userId = user.id;
-
-    // Tạo sinh viên với account_id được gán từ user.id
-    const university_union = await University_Union.create({
-      first_name: req.body.first_name,
-      last_name: req.body.last_name,
-      phone: req.body.phone,
-      address: req.body.address,
-      email: req.body.email,
-      position: req.body.position,
-      account_id: userId
-    }, { transaction: t });
-
-    // Commit transaction nếu không có lỗi xảy ra
-    await t.commit();
+    // Tạo người dùng và sinh viên trong cùng một thời điểm
+    const user = await User.create({ username, password, role_id, status_id: req.body.status_id });
+    const university_union = await University_Union.create({ first_name, last_name, phone, address, email, position, account_id: user.id });
 
     // Trả về kết quả thành công
     return res.status(201).send({ user, university_union });
   } catch (error) {
-    // Rollback transaction nếu có lỗi xảy ra
-    await t.rollback();
-
-    console.log(error);
+    console.error(error);
     return res.status(400).send(error);
   }
 });
+
+
+
 
 // Get all student
 router.get('/student', passport.authenticate('jwt', {
@@ -432,6 +399,16 @@ router.put('/student/', passport.authenticate('jwt', {
         });
       }
     }
+
+    if (req.body.birthday) {
+      if (!validateData(req.body.birthday) || !isValidDateInRange(req.body.birthday)) {
+        return res.status(400).send({
+          msg: 'Please pass validate birth date'
+        });
+      }
+    }
+
+
     Student
         .findByPk(req.body.MSSV)
         .then((student) => {

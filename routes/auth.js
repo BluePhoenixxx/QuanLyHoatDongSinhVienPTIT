@@ -102,8 +102,6 @@ router.post('/login', async function (req, res) {
     }
 });
 
-
-
 // Quên mật khẩu 
 router.post('/forgot-password', async (req, res) => {
     const user_student = await User.findOne({
