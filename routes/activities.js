@@ -44,7 +44,7 @@ router.post('/', passport.authenticate('jwt', {
                     act_name: req.body.act_name,
                     act_description: req.body.act_description,
                     act_address: req.body.act_address,
-                    act_price: req.body.act_price,
+                    act_price: req.body.act_price || NULL,
                     act_time : req.body.act_time,
                     audit_id : admin ? auth : null,
                     act_status: status_id,
