@@ -16,8 +16,8 @@ const validateData = (date) => dateRegex.test(date);
 const isValidDateInRange = dateString => new Date(dateString) <= new Date(new Date().setFullYear(new Date().getFullYear() - 16));
 const Sequelize = require('sequelize');
 const { Where } = require('sequelize/lib/utils');
-
-
+require('dotenv').config()
+const env_mail = process.env.ADMIN_EMAIL || 'nguyentranhungbien@gmail.com';
 // Get details user
 router.get('/details', passport.authenticate('jwt', {
   session: false
@@ -70,7 +70,7 @@ router.post('/create_student', passport.authenticate('jwt', { session: false }),
   const existingUniontPhone = await University_Union.findOne({ where: { phone: phone } } );
   const existingStudentMail = await Student.findOne({ where: { email: email } } );
   const existingStudentPhone = await Student.findOne({ where: { phone: phone } } );
-    if (existingStudentMail || existingUniontMail) {
+    if (existingStudentMail || existingUniontMail || email == env_mail) {
       return res.status(400).send({ msg: 'Email already exists' });
     }
 
@@ -107,7 +107,7 @@ router.post('/create_union', passport.authenticate('jwt', { session: false }), a
   const existingUniontPhone = await University_Union.findOne({ where: { phone: phone } } );
   const existingStudentMail = await Student.findOne({ where: { email: email } } );
   const existingStudentPhone = await Student.findOne({ where: { phone: phone } } );
-    if (existingStudentMail || existingUniontMail) {
+    if (existingStudentMail || existingUniontMail || email == env_mail) {
       return res.status(400).send({ msg: 'Email already exists' });
     }
 
@@ -332,6 +332,15 @@ router.put('/university_union/', passport.authenticate('jwt', {
   helper.checkPermission(req.user.role_id, 'update_details_union').then((rolePerm) => {
     
 
+
+    if (req.body.email == env_mail) {
+      return res.status(400).send({ msg: 'Email already exists' });
+    }
+
+    if (existingStudentPhone || existingUniontPhone) {
+      return res.status(400).send({ msg: 'Phone already exists' });
+    }
+
     if (req.body.phone) {
       if (!validatePhoneNumber(req.body.phone)) {
         return res.status(400).send({
@@ -339,9 +348,9 @@ router.put('/university_union/', passport.authenticate('jwt', {
         });
       }
     }
-
+   
     if (req.body.email) {
-      if (!validateGmailAddress(req.body.email)) {
+      if (!validateGmailAddress(req.body.email) ) {
         return res.status(400).send({
           msg: 'Please pass validate email'
         });
@@ -383,6 +392,11 @@ router.put('/student/', passport.authenticate('jwt', {
 }), function (req, res) {
   helper.checkPermission(req.user.role_id, 'update_info_student').then((rolePerm) => {
     check = req.body.MSSV
+
+  
+      if (req.body.email == env_mail) {
+        return res.status(400).send({ msg: 'Email already exists' });
+      }
 
     if (req.body.phone) {
       if (!validatePhoneNumber(req.body.phone)) {
