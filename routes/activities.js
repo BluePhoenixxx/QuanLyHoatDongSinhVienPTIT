@@ -542,7 +542,9 @@ router.delete('/:id', passport.authenticate('jwt', {
 
                         Activity.destroy({
                             where: {
-                                id: req.params.id
+                                id: req.params.id,
+                                status_id: 1
+
                             }
                         }).then(_ => {
                             res.status(200).send({
