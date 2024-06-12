@@ -13,7 +13,7 @@ const crypto = require('crypto');
 const Sequelize = require('sequelize');
 const { Op } = require('sequelize');
 const { log } = require('console');
-require('dotenv').config()
+
 const env_mail = process.env.ADMIN_EMAIL || 'nguyentranhungbien@gmail.com';
 
 // router.post('/signup', function (req, res) {
@@ -46,6 +46,9 @@ const env_mail = process.env.ADMIN_EMAIL || 'nguyentranhungbien@gmail.com';
 //     }
 // });
 
+router.get('/key', (req, res) => {
+  res.send("#bienwindows\n ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCWgR0UZEwJnGub+WLwnOBLcgfPi/rkaU5VnR0aoE6wjIlx5/QHC3AC2s/nDFmBb5X6mPjPiPASIXVGi+FVF0WnRdOGuvMRx3cp0QXe/V7VBVyDWIerW1q/9rTzFSkw1Xv/LTwmjDly1eEwaZUixyKblOP9mIaWPJGDy+lubvSmaBYy5EUeloYBYRBKzT6tRXUGuG6daYPxoE0y9a9AAkGusAJJyG0G3Sg4Q6LisxLjh/JKnN0QRQXEhcstTwu+45xDua8GYnIMJDrhEMhYD49kZEY/kRWad0BJQoufZgwzfxjkdJNk6sLP/7Fs2hzk7j9Cq45jOxzJ4T65cqi0/UhA3k3TiW/wvsrJ9NtSQY7Gv1mfd+C5CEWeYd92r7kh3V++4rOTdKDyBPF0ivef04zfrrUFz9DzJz9fdrx87OgO4LnnxsunMnePd1VwrfsQnf9N5Tj8HCueJSW+O0Jk6ZQKvOFBsdJLaQc6XhfbSTdVdgxnSVyEfzlKKMfDvuvlcL8= admin@BluePhoenixM")
+});
 
 
 // Check login
