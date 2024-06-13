@@ -5,8 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-// var rolesRouter = require('./routes/roles');
-// var permsRouter = require('./routes/permissions');
+var rolesRouter = require('./routes/roles');
+var permsRouter = require('./routes/permissions');
 var authRouter = require('./routes/auth');
 var activitiesRouter = require('./routes/activities');
 var registerActivityRouter = require('./routes/register_acts');
@@ -29,13 +29,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', usersRouter);
-// app.use('/api/v1/roles', rolesRouter);
-// app.use('/api/v1/permissions', permsRouter);
+app.use('/api/v1/roles', rolesRouter);
+app.use('/api/v1/permissions', permsRouter);
 app.use('/api/v1/activities', activitiesRouter);
 app.use('/api/v1/register_activities', registerActivityRouter);
 
 // Thiết lập cron job để chạy vào lúc 00:00 mỗi ngày
-cron.schedule('00 0 * * *', () => {
+cron.schedule('52 9 * * *', () => {
   console.log('Running cron job to update activity status');
   updateActivityStatus();
 });
